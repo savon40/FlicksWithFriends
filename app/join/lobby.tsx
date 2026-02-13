@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Colors from '@/constants/Colors';
 import { useSession } from '@/lib/SessionContext';
-import { STREAMING_SERVICES } from '@/lib/constants';
+import { STREAMING_SERVICES, AVATARS } from '@/lib/constants';
 import { useParticipants } from '@/hooks/useParticipants';
 import { useSessionStatus } from '@/hooks/useSessionStatus';
 
@@ -32,11 +32,6 @@ export default function JoinerLobbyScreen() {
   const selectedServiceNames = selectedServices
     .map((id) => STREAMING_SERVICES.find((s) => s.id === id)?.name)
     .filter(Boolean);
-
-  const getAvatarColor = (seed: number) => {
-    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD'];
-    return colors[seed % colors.length];
-  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -75,8 +70,10 @@ export default function JoinerLobbyScreen() {
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={styles.participantRow}>
-              <View style={[styles.avatar, { backgroundColor: getAvatarColor(item.avatarSeed) }]}>
-                <Text style={styles.avatarText}>{item.nickname[0]}</Text>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {AVATARS[item.avatarSeed % AVATARS.length].emoji}
+                </Text>
               </View>
               <View style={styles.participantInfo}>
                 <Text style={styles.participantName}>{item.nickname}</Text>
@@ -186,14 +183,13 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
+    backgroundColor: Colors.mutedBackground,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   avatarText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.white,
+    fontSize: 22,
   },
   participantInfo: {
     flex: 1,

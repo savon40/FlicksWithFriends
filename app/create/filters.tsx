@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/Colors';
 import { useSession } from '@/lib/SessionContext';
 import {
@@ -19,6 +20,7 @@ import {
   RUNTIME_OPTIONS,
   YEAR_OPTIONS,
   RATING_OPTIONS,
+  CERTIFICATION_OPTIONS,
   CONTENT_TYPES,
 } from '@/lib/constants';
 import { getDeviceId } from '@/lib/device';
@@ -28,7 +30,7 @@ import {
   seedCatalog,
   addParticipant,
 } from '@/lib/sessionService';
-import { DUMMY_CATALOG } from '@/lib/dummyData';
+import { buildCatalog } from '@/lib/tmdb';
 
 export default function FiltersScreen() {
   const router = useRouter();
@@ -38,6 +40,7 @@ export default function FiltersScreen() {
     updateFilter,
     selectedServices,
     nickname,
+    avatarSeed,
     setSessionCode,
     setSessionId,
     setParticipantId,
@@ -55,6 +58,7 @@ export default function FiltersScreen() {
 
   const handleGenerateCode = async () => {
     if (creating) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setCreating(true);
     try {
       const deviceId = await getDeviceId();
@@ -65,12 +69,19 @@ export default function FiltersScreen() {
         streamingServices: selectedServices,
         filters,
       });
-      await seedCatalog(session.id, DUMMY_CATALOG);
+      const catalog = await buildCatalog(filters, selectedServices);
+      if (catalog.length === 0) {
+        Alert.alert('No Results', 'No titles found matching your filters. Try broadening your selections.');
+        setCreating(false);
+        return;
+      }
+      await seedCatalog(session.id, catalog);
       const participant = await addParticipant({
         sessionId: session.id,
         deviceId,
         nickname: nickname || 'Host',
         isHost: true,
+        avatarSeed,
       });
 
       setSessionCode(session.code);
@@ -93,7 +104,7 @@ export default function FiltersScreen() {
           <Ionicons name="arrow-back" size={24} color={Colors.foreground} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.stepLabel}>Step 2 of 2</Text>
+          <Text style={styles.stepLabel}>Step 3 of 3</Text>
           <Text style={styles.headerTitle}>Set Filters</Text>
         </View>
         <TouchableOpacity onPress={handleGenerateCode}>
@@ -255,6 +266,42 @@ export default function FiltersScreen() {
                 </Text>
               </TouchableOpacity>
             ))}
+          </View>
+        </View>
+
+        {/* Certification */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Certification</Text>
+          <View style={styles.toggleRow}>
+            {CERTIFICATION_OPTIONS.map((opt) => {
+              const isSelected = filters.certifications.includes(opt.id);
+              return (
+                <TouchableOpacity
+                  key={opt.id}
+                  style={[
+                    styles.togglePill,
+                    isSelected && styles.togglePillActive,
+                  ]}
+                  onPress={() =>
+                    updateFilter(
+                      'certifications',
+                      isSelected
+                        ? filters.certifications.filter((c) => c !== opt.id)
+                        : [...filters.certifications, opt.id]
+                    )
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.togglePillText,
+                      isSelected && styles.togglePillTextActive,
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 

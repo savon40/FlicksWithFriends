@@ -33,7 +33,8 @@ export default function RootLayout() {
       <SessionProvider>
         <StatusBar style="dark" />
         <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="create/profile" />
           <Stack.Screen name="create/services" />
           <Stack.Screen name="create/filters" />
           <Stack.Screen name="create/lobby" />

@@ -1,14 +1,17 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Dimensions,
   TouchableOpacity,
-  Image,
   ActivityIndicator,
+  Alert,
+  ScrollView,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -21,8 +24,9 @@ import Animated, {
   Extrapolation,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/Colors';
-import { STREAMING_SERVICES } from '@/lib/constants';
+import { STREAMING_SERVICES, AVATARS } from '@/lib/constants';
 import { CatalogItem } from '@/types';
 import { useSession } from '@/lib/SessionContext';
 import { useCatalog } from '@/hooks/useCatalog';
@@ -32,13 +36,37 @@ import { recordSwipe, updateSwipeProgress } from '@/lib/sessionService';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3;
 
+const DEV_SWIPE_LIMIT = 10;
+
 export default function SwipeScreen() {
   const insets = useSafeAreaInsets();
-  const { sessionId, sessionCode, participantId } = useSession();
+  const router = useRouter();
+  const { sessionId, sessionCode, participantId, resetSession } = useSession();
   const { catalog, loading: catalogLoading } = useCatalog(sessionId);
   const { participants } = useParticipants(sessionId);
   const [currentIndex, setCurrentIndex] = useState(0);
   const cardStartTime = useRef(Date.now());
+
+  const handleLeaveSession = () => {
+    Alert.alert('Leave Session', 'Are you sure you want to leave this session?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Leave',
+        style: 'destructive',
+        onPress: () => {
+          resetSession();
+          router.replace('/(tabs)');
+        },
+      },
+    ]);
+  };
+
+  // Auto-navigate to matches after DEV_SWIPE_LIMIT swipes (for testing)
+  useEffect(() => {
+    if (currentIndex >= DEV_SWIPE_LIMIT && catalog.length > 0) {
+      router.push('/(session)/matches');
+    }
+  }, [currentIndex, catalog.length]);
 
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -66,6 +94,11 @@ export default function SwipeScreen() {
 
   const goToNext = useCallback(
     (direction: 'left' | 'right') => {
+      Haptics.impactAsync(
+        direction === 'right'
+          ? Haptics.ImpactFeedbackStyle.Medium
+          : Haptics.ImpactFeedbackStyle.Light
+      );
       handleSwipeComplete(direction);
       setCurrentIndex((prev) => Math.min(prev + 1, catalog.length));
       translateX.value = 0;
@@ -136,11 +169,6 @@ export default function SwipeScreen() {
 
   const progress = ((currentIndex + 1) / catalog.length) * 100;
 
-  const getAvatarColor = (seed: number) => {
-    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD'];
-    return colors[seed % colors.length];
-  };
-
   if (catalogLoading) {
     return (
       <View style={[styles.container, styles.doneContainer, { paddingTop: insets.top }]}>
@@ -171,9 +199,14 @@ export default function SwipeScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.sessionLabel}>MOVIE NIGHT</Text>
-          <Text style={styles.sessionTitle}>Session {sessionCode ? `#${sessionCode}` : ''}</Text>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity style={styles.leaveButton} onPress={handleLeaveSession}>
+            <Ionicons name="arrow-back" size={18} color={Colors.foreground} />
+          </TouchableOpacity>
+          <View>
+            <Text style={styles.sessionLabel}>MOVIE NIGHT</Text>
+            <Text style={styles.sessionTitle}>Session {sessionCode ? `#${sessionCode}` : ''}</Text>
+          </View>
         </View>
         <View style={styles.headerRight}>
           <View style={styles.avatarStack}>
@@ -185,14 +218,14 @@ export default function SwipeScreen() {
                   {
                     marginLeft: i > 0 ? -8 : 0,
                     zIndex: 3 - i,
-                    backgroundColor: getAvatarColor(p.avatarSeed),
+                    backgroundColor: Colors.mutedBackground,
                     justifyContent: 'center',
                     alignItems: 'center',
                   },
                 ]}
               >
-                <Text style={{ fontSize: 10, fontWeight: '700', color: Colors.white }}>
-                  {p.nickname[0]}
+                <Text style={{ fontSize: 12 }}>
+                  {AVATARS[p.avatarSeed % AVATARS.length].emoji}
                 </Text>
               </View>
             ))}
@@ -250,6 +283,7 @@ export default function SwipeScreen() {
       <Text style={styles.counter}>
         {currentIndex + 1} / {catalog.length}
       </Text>
+      <Text style={styles.tmdbAttribution}>Data provided by TMDB</Text>
     </View>
   );
 }
@@ -258,42 +292,71 @@ function MovieCard({ item }: { item: CatalogItem }) {
   const service = STREAMING_SERVICES.find((s) => item.availableOn.includes(s.id));
 
   const formatRuntime = (min: number) => {
+    if (!min) return null;
     const h = Math.floor(min / 60);
     const m = min % 60;
-    return `${h}h ${m}m`;
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
   };
+
+  const runtime = formatRuntime(item.runtime);
 
   return (
     <View style={styles.movieCard}>
-      <Image source={{ uri: item.posterUrl }} style={styles.posterImage} />
+      <Image source={item.posterUrl} style={styles.posterImage} contentFit="cover" transition={200} />
 
       {/* Streaming badge */}
       {service && (
         <View style={[styles.streamingBadge, { backgroundColor: service.color }]}>
-          <Text style={styles.streamingBadgeText}>{service.logo}</Text>
+          <Text style={styles.streamingBadgeText}>{service.name}</Text>
         </View>
       )}
 
       {/* Gradient overlay */}
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.8)']}
+        colors={['transparent', 'rgba(0,0,0,0.85)']}
         style={styles.gradientOverlay}
       />
 
       {/* Movie Info */}
       <View style={styles.movieInfo}>
-        <Text style={styles.movieTitle}>{item.title}</Text>
-        <View style={styles.metaRow}>
-          {item.genres.slice(0, 1).map((g) => (
-            <View key={g} style={styles.genreTag}>
-              <Text style={styles.genreTagText}>{g}</Text>
-            </View>
-          ))}
-          <Text style={styles.metaText}> · {formatRuntime(item.runtime)}</Text>
-          <Text style={styles.metaText}> · </Text>
-          <Ionicons name="star-outline" size={13} color="rgba(255,255,255,0.8)" />
-          <Text style={styles.metaText}> {item.tmdbRating}</Text>
-        </View>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          nestedScrollEnabled
+        >
+          <Text style={styles.movieTitle}>{item.title}</Text>
+
+          {/* Genres */}
+          <View style={styles.genreRow}>
+            {[...new Set(item.genres)].map((g) => (
+              <View key={g} style={styles.genreTag}>
+                <Text style={styles.genreTagText}>{g}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Meta: year, runtime, rating */}
+          <View style={styles.metaRow}>
+            {item.releaseYear > 0 && (
+              <Text style={styles.metaText}>{item.releaseYear}</Text>
+            )}
+            {runtime && (
+              <Text style={styles.metaText}>
+                {item.releaseYear > 0 ? ' · ' : ''}{runtime}
+              </Text>
+            )}
+            <Text style={styles.metaText}>
+              {(item.releaseYear > 0 || runtime) ? ' · ' : ''}
+            </Text>
+            <Ionicons name="star" size={13} color="rgba(255,255,255,0.8)" />
+            <Text style={styles.metaText}> {item.tmdbRating}</Text>
+          </View>
+
+          {/* Synopsis */}
+          {item.synopsis ? (
+            <Text style={styles.synopsis}>{item.synopsis}</Text>
+          ) : null}
+        </ScrollView>
       </View>
     </View>
   );
@@ -338,6 +401,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 12,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  leaveButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: Colors.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
   },
   sessionLabel: {
     fontSize: 10,
@@ -413,22 +491,21 @@ const styles = StyleSheet.create({
   posterImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
   streamingBadge: {
     position: 'absolute',
     top: 16,
     right: 16,
-    width: 36,
-    height: 36,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 2,
   },
   streamingBadgeText: {
-    fontSize: 16,
-    fontWeight: '900',
+    fontSize: 12,
+    fontWeight: '800',
     color: Colors.white,
   },
   gradientOverlay: {
@@ -436,24 +513,32 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: '50%',
+    height: '60%',
   },
   movieInfo: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
+    maxHeight: '65%',
     padding: 20,
   },
   movieTitle: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: '800',
     color: Colors.white,
-    marginBottom: 8,
+    marginBottom: 6,
+  },
+  genreRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 6,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 6,
   },
   genreTag: {
     backgroundColor: 'rgba(255,255,255,0.2)',
@@ -470,6 +555,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: 'rgba(255,255,255,0.8)',
     fontWeight: '500',
+  },
+  synopsis: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.7)',
+    lineHeight: 18,
   },
   swipeLabel: {
     position: 'absolute',
@@ -535,6 +625,12 @@ const styles = StyleSheet.create({
   counter: {
     fontSize: 13,
     fontWeight: '600',
+    color: Colors.mutedLight,
+    textAlign: 'center',
+    paddingBottom: 2,
+  },
+  tmdbAttribution: {
+    fontSize: 10,
     color: Colors.mutedLight,
     textAlign: 'center',
     paddingBottom: 4,

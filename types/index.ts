@@ -19,6 +19,7 @@ export interface SessionFilters {
   runtimeRange: string | null;
   releaseYearRange: string | null;
   minRating: number | null;
+  certifications: string[];
   contentType: 'movies' | 'tv' | 'both';
 }
 
@@ -81,6 +82,21 @@ export interface Match {
   matchPercentage: number;
   tier: MatchTier;
   avgEnthusiasm: number;
+}
+
+// ─── Session History ──────────────────────────────────────
+export interface SessionHistoryItem {
+  sessionId: string;
+  sessionCode: string;
+  status: SessionStatus;
+  createdAt: string;
+  participantCount: number;
+  topMatch: {
+    title: string;
+    posterUrl: string;
+    matchPercentage: number;
+    availableOn: string[];
+  } | null;
 }
 
 // ─── Streaming Service ─────────────────────────────────────

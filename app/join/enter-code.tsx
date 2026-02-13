@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Colors from '@/constants/Colors';
 import { useSession } from '@/lib/SessionContext';
+import { AVATARS } from '@/lib/constants';
 import { getDeviceId } from '@/lib/device';
 import { lookupSessionByCode, addParticipant } from '@/lib/sessionService';
 
@@ -28,6 +29,7 @@ export default function EnterCodeScreen() {
   const session = useSession();
   const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(''));
   const [nickname, setNickname] = useState('');
+  const [avatarSeed, setAvatarSeed] = useState(0);
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
   const handleCodeChange = (text: string, index: number) => {
@@ -69,6 +71,7 @@ export default function EnterCodeScreen() {
         deviceId,
         nickname: displayName,
         isHost: false,
+        avatarSeed,
       });
       session.setSessionCode(found.code);
       session.setSessionId(found.id);
@@ -142,6 +145,29 @@ export default function EnterCodeScreen() {
             placeholderTextColor={Colors.mutedLight}
             maxLength={20}
           />
+        </View>
+
+        {/* Avatar Picker */}
+        <View style={styles.avatarSection}>
+          <Text style={styles.nicknameLabel}>Choose an Avatar</Text>
+          <View style={styles.avatarGrid}>
+            {AVATARS.map((avatar) => {
+              const isSelected = avatarSeed === avatar.id;
+              return (
+                <TouchableOpacity
+                  key={avatar.id}
+                  style={[
+                    styles.avatarOption,
+                    isSelected && styles.avatarOptionSelected,
+                  ]}
+                  onPress={() => setAvatarSeed(avatar.id)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.avatarEmoji}>{avatar.emoji}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
       </View>
 
@@ -256,6 +282,31 @@ const styles = StyleSheet.create({
     color: Colors.foreground,
     borderWidth: 1,
     borderColor: Colors.cardBorder,
+  },
+  avatarSection: {
+    marginBottom: 24,
+  },
+  avatarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  avatarOption: {
+    width: '22%',
+    aspectRatio: 1,
+    borderRadius: 14,
+    backgroundColor: Colors.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  avatarOptionSelected: {
+    borderColor: Colors.primary,
+    backgroundColor: 'rgba(227, 6, 19, 0.08)',
+  },
+  avatarEmoji: {
+    fontSize: 24,
   },
   bottomBar: {
     paddingHorizontal: 24,

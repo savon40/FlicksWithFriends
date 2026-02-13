@@ -8,6 +8,7 @@ interface SessionState {
   matchThreshold: number;
   isHost: boolean;
   nickname: string;
+  avatarSeed: number;
   selectedServices: string[];
   filters: SessionFilters;
   currentCardIndex: number;
@@ -20,6 +21,7 @@ interface SessionContextType extends SessionState {
   setMatchThreshold: (threshold: number) => void;
   setIsHost: (isHost: boolean) => void;
   setNickname: (name: string) => void;
+  setAvatarSeed: (seed: number) => void;
   setSelectedServices: (services: string[]) => void;
   toggleService: (serviceId: string) => void;
   setFilters: (filters: SessionFilters) => void;
@@ -34,6 +36,7 @@ const defaultFilters: SessionFilters = {
   runtimeRange: 'any',
   releaseYearRange: 'any',
   minRating: null,
+  certifications: [],
   contentType: 'movies',
 };
 
@@ -47,6 +50,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     matchThreshold: 0.5,
     isHost: false,
     nickname: '',
+    avatarSeed: 0,
     selectedServices: [],
     filters: { ...defaultFilters },
     currentCardIndex: 0,
@@ -69,6 +73,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const setNickname = (name: string) =>
     setState((s) => ({ ...s, nickname: name }));
+
+  const setAvatarSeed = (seed: number) =>
+    setState((s) => ({ ...s, avatarSeed: seed }));
 
   const setSelectedServices = (services: string[]) =>
     setState((s) => ({ ...s, selectedServices: services }));
@@ -98,6 +105,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       matchThreshold: 0.5,
       isHost: false,
       nickname: '',
+      avatarSeed: 0,
       selectedServices: [],
       filters: { ...defaultFilters },
       currentCardIndex: 0,
@@ -113,6 +121,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         setMatchThreshold,
         setIsHost,
         setNickname,
+        setAvatarSeed,
         setSelectedServices,
         toggleService,
         setFilters,

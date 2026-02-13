@@ -26,7 +26,7 @@ export default function ServicesScreen() {
           <Ionicons name="arrow-back" size={24} color={Colors.foreground} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.stepLabel}>Step 1 of 2</Text>
+          <Text style={styles.stepLabel}>Step 2 of 3</Text>
           <Text style={styles.headerTitle}>Streaming Services</Text>
         </View>
         <View style={{ width: 40 }} />
@@ -38,7 +38,7 @@ export default function ServicesScreen() {
 
       {/* Progress bar */}
       <View style={styles.progressBar}>
-        <View style={[styles.progressFill, { width: '50%' }]} />
+        <View style={[styles.progressFill, { width: '66%' }]} />
       </View>
 
       {/* Services Grid */}

@@ -1,5 +1,21 @@
 import { StreamingService } from '@/types';
 
+// ─── Avatars ───────────────────────────────────────────────
+export const AVATARS = [
+  { id: 0, emoji: '🍿' },
+  { id: 1, emoji: '🎬' },
+  { id: 2, emoji: '😎' },
+  { id: 3, emoji: '🦊' },
+  { id: 4, emoji: '🧙' },
+  { id: 5, emoji: '🦄' },
+  { id: 6, emoji: '🤖' },
+  { id: 7, emoji: '👻' },
+  { id: 8, emoji: '🐙' },
+  { id: 9, emoji: '🔥' },
+  { id: 10, emoji: '🎮' },
+  { id: 11, emoji: '🌟' },
+];
+
 // ─── Streaming Services ────────────────────────────────────
 export const STREAMING_SERVICES: StreamingService[] = [
   { id: 'netflix', name: 'Netflix', logo: 'N', color: '#E50914' },
@@ -65,6 +81,14 @@ export const RATING_OPTIONS = [
   { value: 7, label: '7+' },
   { value: 8, label: '8+' },
 ];
+
+// ─── Certification Options ────────────────────────────────
+export const CERTIFICATION_OPTIONS = [
+  { id: 'G', label: 'G' },
+  { id: 'PG', label: 'PG' },
+  { id: 'PG-13', label: 'PG-13' },
+  { id: 'R', label: 'R' },
+] as const;
 
 // ─── Content Type ──────────────────────────────────────────
 export const CONTENT_TYPES = [

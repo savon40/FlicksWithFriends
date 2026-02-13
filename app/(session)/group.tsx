@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,22 +7,30 @@ import {
   TouchableOpacity,
   Share,
   Platform,
+  Alert,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '@/constants/Colors';
 import { useSession } from '@/lib/SessionContext';
+import { AVATARS } from '@/lib/constants';
 import { useParticipants } from '@/hooks/useParticipants';
 import { useCatalog } from '@/hooks/useCatalog';
 
 export default function GroupScreen() {
   const insets = useSafeAreaInsets();
-  const { sessionCode, sessionId } = useSession();
+  const router = useRouter();
+  const { sessionCode, sessionId, resetSession } = useSession();
   const { participants } = useParticipants(sessionId);
   const { catalog } = useCatalog(sessionId);
   const totalCards = catalog.length;
+  const [copied, setCopied] = useState(false);
 
   const handleShare = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await Share.share({
         message: `Join my FlickPick session! Code: ${sessionCode || 'FILM42'}`,
@@ -30,15 +38,35 @@ export default function GroupScreen() {
     } catch {}
   };
 
-  const getAvatarColor = (seed: number) => {
-    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD'];
-    return colors[seed % colors.length];
+  const handleCopyCode = async () => {
+    if (!sessionCode) return;
+    await Clipboard.setStringAsync(sessionCode);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleLeaveSession = () => {
+    Alert.alert('Leave Session', 'Are you sure you want to leave this session?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Leave',
+        style: 'destructive',
+        onPress: () => {
+          resetSession();
+          router.replace('/(tabs)');
+        },
+      },
+    ]);
   };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
       {/* Header */}
       <View style={styles.header}>
+        <TouchableOpacity style={styles.leaveButton} onPress={handleLeaveSession}>
+          <Ionicons name="arrow-back" size={18} color={Colors.foreground} />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Group</Text>
         <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
           <Ionicons name="share-outline" size={18} color={Colors.primary} />
@@ -48,10 +76,13 @@ export default function GroupScreen() {
 
       {/* Session Info */}
       <View style={styles.sessionCard}>
-        <View style={styles.sessionRow}>
+        <TouchableOpacity style={styles.sessionRow} onPress={handleCopyCode} activeOpacity={0.7}>
           <Text style={styles.sessionLabel}>Session Code</Text>
-          <Text style={styles.sessionCode}>{sessionCode || 'FILM42'}</Text>
-        </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={styles.sessionCode}>{sessionCode || 'FILM42'}</Text>
+            <Ionicons name={copied ? 'checkmark-circle' : 'copy-outline'} size={16} color={copied ? Colors.green : Colors.muted} />
+          </View>
+        </TouchableOpacity>
         <View style={styles.divider} />
         <View style={styles.sessionRow}>
           <Text style={styles.sessionLabel}>Status</Text>
@@ -77,8 +108,10 @@ export default function GroupScreen() {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.participantRow}>
-            <View style={[styles.avatar, { backgroundColor: getAvatarColor(item.avatarSeed) }]}>
-              <Text style={styles.avatarText}>{item.nickname[0]}</Text>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {AVATARS[item.avatarSeed % AVATARS.length].emoji}
+              </Text>
             </View>
             <View style={styles.participantInfo}>
               <View style={styles.nameRow}>
@@ -113,6 +146,12 @@ export default function GroupScreen() {
         )}
         contentContainerStyle={styles.participantList}
       />
+
+      {/* Leave Session */}
+      <TouchableOpacity style={styles.leaveBtn} onPress={handleLeaveSession} activeOpacity={0.7}>
+        <Ionicons name="log-out-outline" size={18} color={Colors.primary} />
+        <Text style={styles.leaveBtnText}>Leave Session</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -125,11 +164,22 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
+    gap: 12,
+  },
+  leaveButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: Colors.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
   },
   headerTitle: {
+    flex: 1,
     fontSize: 28,
     fontWeight: '800',
     color: Colors.foreground,
@@ -220,14 +270,13 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
+    backgroundColor: Colors.mutedBackground,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   avatarText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.white,
+    fontSize: 24,
   },
   participantInfo: {
     flex: 1,
@@ -282,5 +331,22 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     marginLeft: 8,
+  },
+  leaveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    marginBottom: 24,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    backgroundColor: 'rgba(227, 6, 19, 0.04)',
+  },
+  leaveBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.primary,
   },
 });

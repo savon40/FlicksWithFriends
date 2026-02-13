@@ -5,33 +5,63 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '@/constants/Colors';
 import { Match } from '@/types';
-import { STREAMING_SERVICES } from '@/lib/constants';
+import { STREAMING_SERVICES, AVATARS } from '@/lib/constants';
 import { useSession } from '@/lib/SessionContext';
 import { useMatches } from '@/hooks/useMatches';
 import { useParticipants } from '@/hooks/useParticipants';
+import { updateSessionStatus } from '@/lib/sessionService';
 
 export default function MatchesScreen() {
   const insets = useSafeAreaInsets();
-  const { sessionId, matchThreshold } = useSession();
+  const router = useRouter();
+  const { sessionId, matchThreshold, resetSession } = useSession();
   const { matches, loading } = useMatches(sessionId, matchThreshold);
   const { participants } = useParticipants(sessionId);
   const topMatch = matches[0];
   const otherMatches = matches.slice(1);
 
-  const getAvatarColor = (seed: number) => {
-    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD'];
-    return colors[seed % colors.length];
+  const handleLeaveSession = () => {
+    Alert.alert('Leave Session', 'Are you sure you want to leave this session?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Leave',
+        style: 'destructive',
+        onPress: () => {
+          resetSession();
+          router.replace('/(tabs)');
+        },
+      },
+    ]);
+  };
+
+  const handleFinalize = async () => {
+    if (sessionId) {
+      try {
+        await updateSessionStatus(sessionId, 'completed');
+      } catch {}
+    }
+    resetSession();
+    router.replace('/(tabs)/history');
   };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Leave button */}
+      <View style={styles.leaveHeader}>
+        <TouchableOpacity style={styles.leaveButton} onPress={handleLeaveSession}>
+          <Ionicons name="arrow-back" size={18} color={Colors.foreground} />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -57,19 +87,20 @@ export default function MatchesScreen() {
         )}
 
         {/* Top Match Card */}
-        {topMatch && <TopMatchCard match={topMatch} participants={participants} getAvatarColor={getAvatarColor} />}
+        {topMatch && <TopMatchCard match={topMatch} participants={participants} />}
 
         {/* Other Matches */}
         {otherMatches.map((match, index) => (
           <SecondaryMatchCard key={match.catalogItemId} match={match} rank={index + 2} />
         ))}
 
+        <Text style={styles.tmdbAttribution}>Data provided by TMDB</Text>
         <View style={{ height: 120 }} />
       </ScrollView>
 
       {/* Finalize Button */}
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
-        <TouchableOpacity style={styles.finalizeButton} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.finalizeButton} activeOpacity={0.8} onPress={handleFinalize}>
           <Text style={styles.finalizeButtonText}>Finalize & Watch</Text>
           <Ionicons name="arrow-forward" size={20} color={Colors.white} />
         </TouchableOpacity>
@@ -81,11 +112,9 @@ export default function MatchesScreen() {
 function TopMatchCard({
   match,
   participants,
-  getAvatarColor,
 }: {
   match: Match;
   participants: { id: string; avatarSeed: number; nickname: string }[];
-  getAvatarColor: (seed: number) => string;
 }) {
   return (
     <View style={styles.topCard}>
@@ -107,7 +136,7 @@ function TopMatchCard({
 
         {/* Movie Info Row */}
         <View style={styles.topMovieRow}>
-          <Image source={{ uri: match.posterUrl }} style={styles.topPoster} />
+          <Image source={match.posterUrl} style={styles.topPoster} contentFit="cover" transition={200} />
           <View style={styles.topMovieInfo}>
             <Text style={styles.topMovieTitle}>{match.title}</Text>
             <Text style={styles.topMovieSynopsis} numberOfLines={2}>
@@ -144,14 +173,14 @@ function TopMatchCard({
                   styles.smallAvatar,
                   {
                     marginLeft: i > 0 ? -8 : 0,
-                    backgroundColor: getAvatarColor(p.avatarSeed),
+                    backgroundColor: Colors.mutedBackground,
                     justifyContent: 'center',
                     alignItems: 'center',
                   },
                 ]}
               >
-                <Text style={{ fontSize: 10, fontWeight: '700', color: Colors.white }}>
-                  {p.nickname[0]}
+                <Text style={{ fontSize: 12 }}>
+                  {AVATARS[p.avatarSeed % AVATARS.length].emoji}
                 </Text>
               </View>
             ))}
@@ -173,7 +202,7 @@ function SecondaryMatchCard({ match, rank }: { match: Match; rank: number }) {
         <Text style={styles.rankText}>{rank}</Text>
       </View>
 
-      <Image source={{ uri: match.posterUrl }} style={styles.secondaryPoster} />
+      <Image source={match.posterUrl} style={styles.secondaryPoster} contentFit="cover" transition={200} />
 
       <View style={styles.secondaryInfo}>
         <View style={styles.secondaryHeader}>
@@ -215,6 +244,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  leaveHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  leaveButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: Colors.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
   },
   scrollView: {
     flex: 1,
@@ -495,5 +539,11 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     color: Colors.white,
+  },
+  tmdbAttribution: {
+    fontSize: 10,
+    color: Colors.mutedLight,
+    textAlign: 'center',
+    marginTop: 16,
   },
 });

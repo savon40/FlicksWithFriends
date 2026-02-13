@@ -3,6 +3,7 @@ import {
   Session,
   SessionFilters,
   SessionStatus,
+  SessionHistoryItem,
   Participant,
   CatalogItem,
   Match,
@@ -167,15 +168,20 @@ export async function addParticipant(params: {
   deviceId: string;
   nickname: string;
   isHost: boolean;
+  avatarSeed?: number;
 }): Promise<Participant> {
+  const row: Record<string, unknown> = {
+    session_id: params.sessionId,
+    device_id: params.deviceId,
+    nickname: params.nickname,
+    is_host: params.isHost,
+  };
+  if (params.avatarSeed !== undefined) {
+    row.avatar_seed = params.avatarSeed;
+  }
   const { data, error } = await supabase
     .from('participants')
-    .insert({
-      session_id: params.sessionId,
-      device_id: params.deviceId,
-      nickname: params.nickname,
-      is_host: params.isHost,
-    })
+    .insert(row)
     .select()
     .single();
 
@@ -275,4 +281,76 @@ export async function fetchMatches(
 
   if (error) throw error;
   return (data ?? []).map(toMatch);
+}
+
+// ─── Session History ────────────────────────────────────────
+
+export async function fetchSessionHistory(
+  deviceId: string
+): Promise<SessionHistoryItem[]> {
+  // 1. Find sessions this device participated in
+  const { data: participantRows, error: pErr } = await supabase
+    .from('participants')
+    .select('session_id')
+    .eq('device_id', deviceId);
+
+  if (pErr) throw pErr;
+  if (!participantRows || participantRows.length === 0) return [];
+
+  const sessionIds = [...new Set(participantRows.map((r) => r.session_id))];
+
+  // 2. Fetch session details
+  const { data: sessions, error: sErr } = await supabase
+    .from('sessions')
+    .select('*')
+    .in('id', sessionIds)
+    .in('status', ['active', 'completed'])
+    .order('created_at', { ascending: false });
+
+  if (sErr) throw sErr;
+  if (!sessions || sessions.length === 0) return [];
+
+  const activeSessionIds = sessions.map((s) => s.id);
+
+  // 3. Get participant counts
+  const { data: countRows, error: cErr } = await supabase
+    .from('participants')
+    .select('session_id')
+    .in('session_id', activeSessionIds);
+
+  if (cErr) throw cErr;
+  const countMap: Record<string, number> = {};
+  (countRows ?? []).forEach((r) => {
+    countMap[r.session_id] = (countMap[r.session_id] || 0) + 1;
+  });
+
+  // 4. Get top match per session from session_matches view
+  const { data: matchRows, error: mErr } = await supabase
+    .from('session_matches')
+    .select('session_id, title, poster_url, match_percentage, available_on')
+    .in('session_id', activeSessionIds)
+    .order('match_percentage', { ascending: false });
+
+  if (mErr) throw mErr;
+  const topMatchMap: Record<string, SessionHistoryItem['topMatch']> = {};
+  (matchRows ?? []).forEach((r) => {
+    if (!topMatchMap[r.session_id]) {
+      topMatchMap[r.session_id] = {
+        title: r.title,
+        posterUrl: r.poster_url ?? '',
+        matchPercentage: Number(r.match_percentage),
+        availableOn: r.available_on ?? [],
+      };
+    }
+  });
+
+  // 5. Assemble results
+  return sessions.map((s) => ({
+    sessionId: s.id,
+    sessionCode: s.code,
+    status: s.status as SessionStatus,
+    createdAt: s.created_at,
+    participantCount: countMap[s.id] || 0,
+    topMatch: topMatchMap[s.id] || null,
+  }));
 }
