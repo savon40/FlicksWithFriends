@@ -11,6 +11,7 @@ export function useMatches(sessionId: string | null, matchThreshold: number) {
 
   const load = useCallback(async () => {
     if (!sessionId) return;
+    setError(null);
     try {
       const data = await fetchMatches(sessionId, matchThreshold);
       setMatches(data);
@@ -46,7 +47,15 @@ export function useMatches(sessionId: string | null, matchThreshold: number) {
           }, 500);
         }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR') {
+          console.warn('[FlickPick] Matches realtime error:', status, err);
+          setError(`Realtime connection ${status.toLowerCase()}`);
+        }
+        if (status === 'SUBSCRIBED') {
+          setError(null);
+        }
+      });
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -54,5 +63,5 @@ export function useMatches(sessionId: string | null, matchThreshold: number) {
     };
   }, [sessionId, load]);
 
-  return { matches, loading, error };
+  return { matches, loading, error, retry: load };
 }

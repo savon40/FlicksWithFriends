@@ -23,6 +23,7 @@ import {
   CERTIFICATION_OPTIONS,
   CONTENT_TYPES,
 } from '@/lib/constants';
+import * as Sentry from '@sentry/react-native';
 import { getDeviceId } from '@/lib/device';
 import {
   generateUniqueCode,
@@ -60,22 +61,43 @@ export default function FiltersScreen() {
     if (creating) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setCreating(true);
+    console.log('[FlickPick] handleGenerateCode started');
+    console.log('[FlickPick] selectedServices:', selectedServices);
+    console.log('[FlickPick] filters:', JSON.stringify(filters));
     try {
+      console.log('[FlickPick] Getting device ID...');
       const deviceId = await getDeviceId();
+      console.log('[FlickPick] Device ID:', deviceId);
+      Sentry.setUser({ id: deviceId });
+
+      console.log('[FlickPick] Generating unique code...');
       const code = await generateUniqueCode();
+      console.log('[FlickPick] Code generated:', code);
+
+      console.log('[FlickPick] Creating session in Supabase...');
       const session = await createSession({
         code,
         deviceId,
         streamingServices: selectedServices,
         filters,
       });
+      console.log('[FlickPick] Session created:', session.id);
+
+      console.log('[FlickPick] Building catalog from TMDB...');
       const catalog = await buildCatalog(filters, selectedServices);
+      console.log('[FlickPick] Catalog built, items:', catalog.length);
+
       if (catalog.length === 0) {
         Alert.alert('No Results', 'No titles found matching your filters. Try broadening your selections.');
         setCreating(false);
         return;
       }
+
+      console.log('[FlickPick] Seeding catalog to Supabase...');
       await seedCatalog(session.id, catalog);
+      console.log('[FlickPick] Catalog seeded');
+
+      console.log('[FlickPick] Adding host participant...');
       const participant = await addParticipant({
         sessionId: session.id,
         deviceId,
@@ -83,13 +105,24 @@ export default function FiltersScreen() {
         isHost: true,
         avatarSeed,
       });
+      console.log('[FlickPick] Participant added:', participant.id);
 
       setSessionCode(session.code);
       setSessionId(session.id);
       setParticipantId(participant.id);
       setMatchThreshold(session.matchThreshold);
+      Sentry.addBreadcrumb({
+        category: 'session',
+        message: `Created session ${session.code} with ${catalog.length} items`,
+        level: 'info',
+      });
+      console.log('[FlickPick] Navigating to lobby');
       router.push('/create/lobby');
     } catch (e: any) {
+      console.error('[FlickPick] ERROR in handleGenerateCode:', e);
+      console.error('[FlickPick] Error message:', e.message);
+      console.error('[FlickPick] Error stack:', e.stack);
+      Sentry.captureException(e, { tags: { action: 'createSession' } });
       Alert.alert('Error', e.message ?? 'Could not create session');
     } finally {
       setCreating(false);

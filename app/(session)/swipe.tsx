@@ -25,6 +25,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
+import * as Sentry from '@sentry/react-native';
 import Colors from '@/constants/Colors';
 import { STREAMING_SERVICES, AVATARS } from '@/lib/constants';
 import { CatalogItem } from '@/types';
@@ -42,7 +43,7 @@ export default function SwipeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { sessionId, sessionCode, participantId, resetSession } = useSession();
-  const { catalog, loading: catalogLoading } = useCatalog(sessionId);
+  const { catalog, loading: catalogLoading, error: catalogError, retry: retryCatalog } = useCatalog(sessionId);
   const { participants } = useParticipants(sessionId);
   const [currentIndex, setCurrentIndex] = useState(0);
   const cardStartTime = useRef(Date.now());
@@ -79,15 +80,25 @@ export default function SwipeScreen() {
       if (!participantId || !sessionId || !catalog[currentIndex]) return;
       const timeOnCardMs = Date.now() - cardStartTime.current;
       const catalogItem = catalog[currentIndex];
-      // Fire and forget
+      Sentry.addBreadcrumb({
+        category: 'swipe',
+        message: `${direction} on "${catalogItem.title}"`,
+        level: 'info',
+      });
       recordSwipe({
         participantId,
         catalogItemId: catalogItem.id,
         sessionId,
         direction,
         timeOnCardMs,
-      }).catch(() => {});
-      updateSwipeProgress(participantId, currentIndex + 1).catch(() => {});
+      }).catch((e) => {
+        console.warn('[FlickPick] recordSwipe failed:', e.message);
+        Sentry.captureException(e, { tags: { action: 'recordSwipe' } });
+      });
+      updateSwipeProgress(participantId, currentIndex + 1).catch((e) => {
+        console.warn('[FlickPick] updateSwipeProgress failed:', e.message);
+        Sentry.captureException(e, { tags: { action: 'updateSwipeProgress' } });
+      });
     },
     [participantId, sessionId, catalog, currentIndex]
   );
@@ -167,13 +178,29 @@ export default function SwipeScreen() {
     });
   };
 
-  const progress = ((currentIndex + 1) / catalog.length) * 100;
+  const progress = catalog.length > 0 ? ((currentIndex + 1) / catalog.length) * 100 : 0;
 
   if (catalogLoading) {
     return (
       <View style={[styles.container, styles.doneContainer, { paddingTop: insets.top }]}>
         <ActivityIndicator size="large" color={Colors.primary} />
         <Text style={styles.doneSubtitle}>Loading movies...</Text>
+      </View>
+    );
+  }
+
+  if (catalogError) {
+    return (
+      <View style={[styles.container, styles.doneContainer, { paddingTop: insets.top }]}>
+        <Ionicons name="cloud-offline-outline" size={56} color={Colors.muted} />
+        <Text style={styles.doneTitle}>Failed to Load</Text>
+        <Text style={styles.doneSubtitle}>{catalogError}</Text>
+        <TouchableOpacity
+          style={{ backgroundColor: Colors.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 14, marginTop: 8 }}
+          onPress={retryCatalog}
+        >
+          <Text style={{ color: Colors.white, fontWeight: '600', fontSize: 15 }}>Retry</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -256,7 +283,7 @@ export default function SwipeScreen() {
             <Animated.View style={[styles.swipeLabel, styles.nopeLabel, nopeOpacity]}>
               <Text style={[styles.swipeLabelText, styles.nopeLabelText]}>NOPE</Text>
             </Animated.View>
-            <MovieCard item={currentCard} />
+            {currentCard && <MovieCard item={currentCard} />}
           </Animated.View>
         </GestureDetector>
       </View>

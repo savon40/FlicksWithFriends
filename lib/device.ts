@@ -18,22 +18,34 @@ export async function getDeviceId(): Promise<string> {
   if (cached) return cached;
 
   if (Platform.OS === "web") {
-    let id = localStorage.getItem(DEVICE_ID_KEY);
+    try {
+      let id = localStorage.getItem(DEVICE_ID_KEY);
+      if (!id) {
+        id = typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : generateUUID();
+        localStorage.setItem(DEVICE_ID_KEY, id);
+      }
+      cached = id;
+      return id;
+    } catch (e) {
+      console.warn("[FlickPick] localStorage failed, using in-memory ID:", e);
+      cached = generateUUID();
+      return cached;
+    }
+  }
+
+  try {
+    let id = await SecureStore.getItemAsync(DEVICE_ID_KEY);
     if (!id) {
-      id = typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : generateUUID();
-      localStorage.setItem(DEVICE_ID_KEY, id);
+      id = generateUUID();
+      await SecureStore.setItemAsync(DEVICE_ID_KEY, id);
     }
     cached = id;
     return id;
+  } catch (e) {
+    console.warn("[FlickPick] SecureStore failed, using in-memory ID:", e);
+    cached = generateUUID();
+    return cached;
   }
-
-  let id = await SecureStore.getItemAsync(DEVICE_ID_KEY);
-  if (!id) {
-    id = generateUUID();
-    await SecureStore.setItemAsync(DEVICE_ID_KEY, id);
-  }
-  cached = id;
-  return id;
 }

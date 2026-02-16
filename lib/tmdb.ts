@@ -63,15 +63,21 @@ const TMDB_GENRE_NAME_MAP: Record<string, string> = {
 
 async function tmdbFetch(path: string, params: Record<string, string> = {}): Promise<any> {
   const apiKey = process.env.EXPO_PUBLIC_TMDB_API_KEY;
-  if (!apiKey) throw new Error('TMDB API key not configured. Add EXPO_PUBLIC_TMDB_API_KEY to .env');
+  if (!apiKey) {
+    console.error('[TMDB] API key missing! EXPO_PUBLIC_TMDB_API_KEY not set');
+    throw new Error('TMDB API key not configured. Add EXPO_PUBLIC_TMDB_API_KEY to .env');
+  }
 
   const query = Object.entries({ api_key: apiKey, ...params })
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
     .join('&');
   const url = `${TMDB_BASE}${path}?${query}`;
 
+  console.log('[TMDB] Fetching:', path);
   const res = await fetch(url);
   if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    console.error('[TMDB] API error:', res.status, res.statusText, body);
     throw new Error(`TMDB API error: ${res.status} ${res.statusText}`);
   }
   return res.json();
@@ -302,6 +308,10 @@ export async function buildCatalog(
   filters: SessionFilters,
   selectedServices: string[]
 ): Promise<CatalogItem[]> {
+  console.log('[TMDB] buildCatalog called');
+  console.log('[TMDB] contentType:', filters.contentType);
+  console.log('[TMDB] selectedServices:', selectedServices);
+
   const includeMovies = filters.contentType === 'movies' || filters.contentType === 'both';
   const includeTV = filters.contentType === 'tv' || filters.contentType === 'both';
   const isBoth = filters.contentType === 'both';
@@ -313,6 +323,7 @@ export async function buildCatalog(
 
   // Discover movies (fetch 2 pages for broader pool)
   if (includeMovies) {
+    console.log('[TMDB] Discovering movies...');
     const params = buildDiscoverParams(filters, selectedServices, false);
     const [page1, page2] = await Promise.all([
       tmdbFetch('/discover/movie', { ...params, page: '1' }),
@@ -322,10 +333,12 @@ export async function buildCatalog(
       ...(page1.results ?? []),
       ...(page2.results ?? []),
     ].slice(0, perType);
+    console.log('[TMDB] Movie discover results:', movieResults.length);
   }
 
   // Discover TV (fetch 2 pages for broader pool)
   if (includeTV) {
+    console.log('[TMDB] Discovering TV...');
     const params = buildDiscoverParams(filters, selectedServices, true);
     const [page1, page2] = await Promise.all([
       tmdbFetch('/discover/tv', { ...params, page: '1' }),
@@ -335,20 +348,29 @@ export async function buildCatalog(
       ...(page1.results ?? []),
       ...(page2.results ?? []),
     ].slice(0, perType);
+    console.log('[TMDB] TV discover results:', tvResults.length);
   }
 
   // Fetch details in parallel
+  console.log('[TMDB] Fetching details for', movieResults.length, 'movies and', tvResults.length, 'TV shows...');
   const moviePromises = movieResults.map((r, i) =>
-    fetchMovieDetails(r.id, selectedServices, i + 1)
+    fetchMovieDetails(r.id, selectedServices, i + 1).catch((err) => {
+      console.error('[TMDB] Failed to fetch movie details for ID', r.id, ':', err.message);
+      return null;
+    })
   );
   const tvPromises = tvResults.map((r, i) =>
-    fetchTVDetails(r.id, selectedServices, i + 1)
+    fetchTVDetails(r.id, selectedServices, i + 1).catch((err) => {
+      console.error('[TMDB] Failed to fetch TV details for ID', r.id, ':', err.message);
+      return null;
+    })
   );
 
   const [movieItems, tvItems] = await Promise.all([
     Promise.all(moviePromises),
     Promise.all(tvPromises),
   ]);
+  console.log('[TMDB] Detail fetches complete. Movies:', movieItems.filter(Boolean).length, 'TV:', tvItems.filter(Boolean).length);
 
   const movies = movieItems.filter((item): item is CatalogItem => item !== null);
   const tvShows = tvItems.filter((item): item is CatalogItem => item !== null);

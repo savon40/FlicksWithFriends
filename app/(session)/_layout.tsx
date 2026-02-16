@@ -2,7 +2,14 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { View, StyleSheet } from 'react-native';
+import * as Sentry from '@sentry/react-native';
 import Colors from '@/constants/Colors';
+import { ErrorFallback } from '@/components/ErrorFallback';
+
+export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
+  Sentry.captureException(error);
+  return <ErrorFallback error={error} retry={retry} />;
+}
 
 export default function SessionTabLayout() {
   return (

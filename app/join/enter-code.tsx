@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Colors from '@/constants/Colors';
 import { useSession } from '@/lib/SessionContext';
 import { AVATARS } from '@/lib/constants';
+import * as Sentry from '@sentry/react-native';
 import { getDeviceId } from '@/lib/device';
 import { lookupSessionByCode, addParticipant } from '@/lib/sessionService';
 
@@ -65,6 +66,7 @@ export default function EnterCodeScreen() {
         return;
       }
       const deviceId = await getDeviceId();
+      Sentry.setUser({ id: deviceId });
       const displayName = nickname || 'Guest';
       const participant = await addParticipant({
         sessionId: found.id,
@@ -80,8 +82,14 @@ export default function EnterCodeScreen() {
       session.setSelectedServices(found.streamingServices);
       session.setIsHost(false);
       session.setNickname(displayName);
+      Sentry.addBreadcrumb({
+        category: 'session',
+        message: `Joined session ${fullCode}`,
+        level: 'info',
+      });
       router.push('/join/lobby');
     } catch (e: any) {
+      Sentry.captureException(e, { tags: { action: 'joinSession' } });
       Alert.alert('Error', e.message ?? 'Could not join session');
     } finally {
       setJoining(false);

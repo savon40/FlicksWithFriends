@@ -4,14 +4,25 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import * as Sentry from '@sentry/react-native';
 import { SessionProvider } from '@/lib/SessionContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { ErrorFallback } from '@/components/ErrorFallback';
 
-export { ErrorBoundary } from 'expo-router';
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  enabled: !__DEV__,
+  tracesSampleRate: 0.2,
+});
+
+export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
+  Sentry.captureException(error);
+  return <ErrorFallback error={error} retry={retry} />;
+}
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
@@ -46,3 +57,5 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+export default Sentry.wrap(RootLayout);

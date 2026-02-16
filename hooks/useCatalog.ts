@@ -9,6 +9,7 @@ export function useCatalog(sessionId: string | null) {
 
   const load = useCallback(async () => {
     if (!sessionId) return;
+    setError(null);
     try {
       const data = await fetchCatalog(sessionId);
       setCatalog(data);
@@ -23,5 +24,5 @@ export function useCatalog(sessionId: string | null) {
     load();
   }, [load]);
 
-  return { catalog, loading, error };
+  return { catalog, loading, error, retry: load };
 }

@@ -14,8 +14,10 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Sentry from '@sentry/react-native';
 import Colors from '@/constants/Colors';
 import { useSession } from '@/lib/SessionContext';
+import { InlineError } from '@/components/ErrorFallback';
 import { AVATARS } from '@/lib/constants';
 import { useParticipants } from '@/hooks/useParticipants';
 import { useCatalog } from '@/hooks/useCatalog';
@@ -24,7 +26,7 @@ export default function GroupScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { sessionCode, sessionId, resetSession } = useSession();
-  const { participants } = useParticipants(sessionId);
+  const { participants, error: participantsError, retry: retryParticipants } = useParticipants(sessionId);
   const { catalog } = useCatalog(sessionId);
   const totalCards = catalog.length;
   const [copied, setCopied] = useState(false);
@@ -35,12 +37,22 @@ export default function GroupScreen() {
       await Share.share({
         message: `Join my FlickPick session! Code: ${sessionCode || 'FILM42'}`,
       });
-    } catch {}
+    } catch (e: any) {
+      // Share cancellation is normal — only log actual errors
+      if (e?.message && !e.message.includes('cancel')) {
+        console.warn('[FlickPick] Share failed:', e.message);
+        Sentry.captureException(e, { tags: { action: 'shareSession' } });
+      }
+    }
   };
 
   const handleCopyCode = async () => {
     if (!sessionCode) return;
-    await Clipboard.setStringAsync(sessionCode);
+    try {
+      await Clipboard.setStringAsync(sessionCode);
+    } catch (e: any) {
+      console.warn('[FlickPick] Clipboard copy failed:', e.message);
+    }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -73,6 +85,8 @@ export default function GroupScreen() {
           <Text style={styles.shareBtnText}>Invite</Text>
         </TouchableOpacity>
       </View>
+
+      {participantsError && <InlineError message={participantsError} retry={retryParticipants} />}
 
       {/* Session Info */}
       <View style={styles.sessionCard}>
@@ -127,7 +141,7 @@ export default function GroupScreen() {
                   <View
                     style={[
                       styles.miniProgressFill,
-                      { width: `${(item.swipeProgress / totalCards) * 100}%` },
+                      { width: `${totalCards > 0 ? (item.swipeProgress / totalCards) * 100 : 0}%` },
                     ]}
                   />
                 </View>

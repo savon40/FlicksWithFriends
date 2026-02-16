@@ -12,8 +12,10 @@ import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Sentry from '@sentry/react-native';
 import Colors from '@/constants/Colors';
 import { Match } from '@/types';
+import { InlineError } from '@/components/ErrorFallback';
 import { STREAMING_SERVICES, AVATARS } from '@/lib/constants';
 import { useSession } from '@/lib/SessionContext';
 import { useMatches } from '@/hooks/useMatches';
@@ -24,7 +26,7 @@ export default function MatchesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { sessionId, matchThreshold, resetSession } = useSession();
-  const { matches, loading } = useMatches(sessionId, matchThreshold);
+  const { matches, loading, error: matchesError, retry: retryMatches } = useMatches(sessionId, matchThreshold);
   const { participants } = useParticipants(sessionId);
   const topMatch = matches[0];
   const otherMatches = matches.slice(1);
@@ -47,7 +49,10 @@ export default function MatchesScreen() {
     if (sessionId) {
       try {
         await updateSessionStatus(sessionId, 'completed');
-      } catch {}
+      } catch (e: any) {
+        console.warn('[FlickPick] Failed to mark session completed:', e.message);
+        Sentry.captureException(e, { tags: { action: 'finalizeSession' } });
+      }
     }
     resetSession();
     router.replace('/(tabs)/history');
@@ -85,6 +90,8 @@ export default function MatchesScreen() {
         {loading && (
           <ActivityIndicator size="large" color={Colors.primary} style={{ marginVertical: 20 }} />
         )}
+
+        {matchesError && <InlineError message={matchesError} retry={retryMatches} />}
 
         {/* Top Match Card */}
         {topMatch && <TopMatchCard match={topMatch} participants={participants} />}

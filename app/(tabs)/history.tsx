@@ -12,6 +12,7 @@ import { useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '@/constants/Colors';
+import { InlineError } from '@/components/ErrorFallback';
 import { STREAMING_SERVICES } from '@/lib/constants';
 import { useSessionHistory } from '@/hooks/useSessionHistory';
 import { SessionHistoryItem } from '@/types';
@@ -113,7 +114,7 @@ function HistoryCard({ item }: { item: SessionHistoryItem }) {
 
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
-  const { sessions, loading, refresh } = useSessionHistory();
+  const { sessions, loading, error, refresh } = useSessionHistory();
 
   useFocusEffect(
     useCallback(() => {
@@ -133,7 +134,9 @@ export default function HistoryScreen() {
     <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
       <Text style={styles.headerTitle}>History</Text>
 
-      {sessions.length === 0 ? (
+      {error && <InlineError message={error} retry={refresh} />}
+
+      {sessions.length === 0 && !error ? (
         <View style={styles.emptyState}>
           <Ionicons name="time-outline" size={56} color={Colors.mutedLight} />
           <Text style={styles.emptyTitle}>No Past Sessions</Text>

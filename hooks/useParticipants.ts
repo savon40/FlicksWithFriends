@@ -10,6 +10,7 @@ export function useParticipants(sessionId: string | null) {
 
   const load = useCallback(async () => {
     if (!sessionId) return;
+    setError(null);
     try {
       const data = await fetchParticipants(sessionId);
       setParticipants(data);
@@ -77,12 +78,20 @@ export function useParticipants(sessionId: string | null) {
           );
         }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR') {
+          console.warn('[FlickPick] Participants realtime error:', status, err);
+          setError(`Realtime connection ${status.toLowerCase()}`);
+        }
+        if (status === 'SUBSCRIBED') {
+          setError(null);
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
     };
   }, [sessionId]);
 
-  return { participants, loading, error };
+  return { participants, loading, error, retry: load };
 }
