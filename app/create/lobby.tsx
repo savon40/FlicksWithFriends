@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: 'rgba(227, 6, 19, 0.08)',
+    backgroundColor: 'rgba(0, 188, 212, 0.08)',
   },
   shareButtonText: {
     fontSize: 14,
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
-    backgroundColor: 'rgba(227, 6, 19, 0.08)',
+    backgroundColor: 'rgba(0, 188, 212, 0.08)',
   },
   filterTagText: {
     fontSize: 12,
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
-    backgroundColor: 'rgba(227, 6, 19, 0.1)',
+    backgroundColor: 'rgba(0, 188, 212, 0.1)',
   },
   hostBadgeText: {
     fontSize: 10,

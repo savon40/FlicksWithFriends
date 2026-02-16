@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   },
   avatarOptionSelected: {
     borderColor: Colors.primary,
-    backgroundColor: 'rgba(227, 6, 19, 0.08)',
+    backgroundColor: 'rgba(0, 188, 212, 0.08)',
   },
   avatarEmoji: {
     fontSize: 24,

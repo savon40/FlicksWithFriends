@@ -35,7 +35,7 @@ export default function WelcomeScreen() {
     >
       {/* Background gradient */}
       <LinearGradient
-        colors={['#e8d5d0', '#c9d4e0', '#d5d5d5']}
+        colors={['#e0f7fa', '#e0f2f1', '#eceff1']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: Colors.primary,
     letterSpacing: -1,
-    textShadowColor: 'rgba(227, 6, 19, 0.3)',
+    textShadowColor: 'rgba(0, 188, 212, 0.3)',
     textShadowOffset: { width: 0, height: 4 },
     textShadowRadius: 25,
   },
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 14,
-    backgroundColor: 'rgba(227, 6, 19, 0.08)',
+    backgroundColor: 'rgba(0, 188, 212, 0.08)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 14,
-    backgroundColor: 'rgba(227, 6, 19, 0.08)',
+    backgroundColor: 'rgba(0, 188, 212, 0.08)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,

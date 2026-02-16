@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
-    backgroundColor: 'rgba(227, 6, 19, 0.1)',
+    backgroundColor: 'rgba(0, 188, 212, 0.1)',
   },
   hostBadgeText: {
     fontSize: 10,
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: 'rgba(227, 6, 19, 0.2)',
+    backgroundColor: 'rgba(0, 188, 212, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
