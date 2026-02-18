@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#00838f"/>
+      <stop offset="100%" stop-color="#00bcd4"/>
+    </linearGradient>
+    <linearGradient id="cardShadow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0.15"/>
+    </linearGradient>
+    <!-- Clipping for rounded icon -->
+    <clipPath id="iconClip">
+      <rect width="1024" height="1024" rx="224" ry="224"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <g clip-path="url(#iconClip)">
+    <rect width="1024" height="1024" fill="url(#bg)"/>
+
+    <!-- Subtle radial glow -->
+    <circle cx="512" cy="480" r="400" fill="white" opacity="0.06"/>
+
+    <!-- Back card (faint, peeking behind) -->
+    <g transform="translate(512, 480) rotate(-6) translate(-512, -480)">
+      <rect x="312" y="200" width="400" height="560" rx="32" fill="white" opacity="0.15"/>
+    </g>
+
+    <!-- Main swiped card -->
+    <g transform="translate(512, 480) rotate(12) translate(-512, -480)">
+      <!-- Card shadow -->
+      <rect x="292" y="188" width="400" height="560" rx="32" fill="black" opacity="0.12" transform="translate(8, 12)"/>
+      <!-- Card body -->
+      <rect x="292" y="188" width="400" height="560" rx="32" fill="white"/>
+
+      <!-- Movie poster area (dark rectangle) -->
+      <rect x="316" y="212" width="352" height="340" rx="20" fill="#e0f7fa"/>
+
+      <!-- Film strip / clapperboard on poster area -->
+      <!-- Clapperboard top -->
+      <rect x="370" y="280" width="244" height="160" rx="12" fill="#00838f"/>
+      <!-- Clapperboard stripes (clapper part) -->
+      <rect x="370" y="260" width="244" height="50" rx="8" fill="#0f172a"/>
+      <!-- Diagonal stripes on clapper -->
+      <rect x="385" y="260" width="18" height="50" rx="2" fill="white" opacity="0.9" transform="rotate(-15, 394, 285)"/>
+      <rect x="425" y="260" width="18" height="50" rx="2" fill="white" opacity="0.9" transform="rotate(-15, 434, 285)"/>
+      <rect x="465" y="260" width="18" height="50" rx="2" fill="white" opacity="0.9" transform="rotate(-15, 474, 285)"/>
+      <rect x="505" y="260" width="18" height="50" rx="2" fill="white" opacity="0.9" transform="rotate(-15, 514, 285)"/>
+      <rect x="545" y="260" width="18" height="50" rx="2" fill="white" opacity="0.9" transform="rotate(-15, 554, 285)"/>
+      <!-- Play triangle -->
+      <polygon points="472,360 472,420 522,390" fill="white" opacity="0.9"/>
+
+      <!-- Text placeholder lines -->
+      <rect x="330" y="576" width="220" height="18" rx="9" fill="#cfd8dc"/>
+      <rect x="330" y="608" width="160" height="14" rx="7" fill="#e0f7fa"/>
+      <rect x="330" y="634" width="260" height="12" rx="6" fill="#e0f7fa"/>
+      <rect x="330" y="658" width="240" height="12" rx="6" fill="#e0f7fa"/>
+
+      <!-- Streaming badge (top right of card) -->
+      <rect x="596" y="224" width="60" height="28" rx="10" fill="#00bcd4"/>
+    </g>
+
+    <!-- Green "LIKE" stamp -->
+    <g transform="translate(512, 480) rotate(12) translate(-512, -480)">
+      <g transform="translate(330, 460) rotate(-18)">
+        <rect x="0" y="0" width="120" height="48" rx="10" fill="none" stroke="#22c55e" stroke-width="6"/>
+        <text x="60" y="33" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="28" fill="#22c55e" letter-spacing="3">LIKE</text>
+      </g>
+    </g>
+
+    <!-- Swipe motion lines (right side) -->
+    <g opacity="0.3">
+      <rect x="700" y="380" width="60" height="5" rx="2.5" fill="white"/>
+      <rect x="720" y="420" width="80" height="5" rx="2.5" fill="white"/>
+      <rect x="710" y="460" width="70" height="5" rx="2.5" fill="white"/>
+      <rect x="700" y="500" width="60" height="5" rx="2.5" fill="white"/>
+    </g>
+  </g>
+</svg>
