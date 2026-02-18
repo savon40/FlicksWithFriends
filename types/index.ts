@@ -20,6 +20,7 @@ export interface SessionFilters {
   releaseYearRange: string | null;
   minRating: number | null;
   certifications: string[];
+  animation: 'include' | 'exclude' | null;
   contentType: 'movies' | 'tv' | 'both';
 }
 

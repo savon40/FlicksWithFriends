@@ -161,6 +161,18 @@ export async function updateSessionStatus(
   if (error) throw error;
 }
 
+export async function selectSessionWinner(
+  sessionId: string,
+  catalogItemId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('sessions')
+    .update({ selected_match_id: catalogItemId })
+    .eq('id', sessionId);
+
+  if (error) throw error;
+}
+
 // ─── Participants ────────────────────────────────────────
 
 export async function addParticipant(params: {
@@ -277,7 +289,8 @@ export async function fetchMatches(
     .select('*')
     .eq('session_id', sessionId)
     .gte('match_percentage', matchThreshold)
-    .order('match_percentage', { ascending: false });
+    .order('match_percentage', { ascending: false })
+    .order('tmdb_rating', { ascending: false });
 
   if (error) throw error;
   return (data ?? []).map(toMatch);
@@ -324,25 +337,60 @@ export async function fetchSessionHistory(
     countMap[r.session_id] = (countMap[r.session_id] || 0) + 1;
   });
 
-  // 4. Get top match per session from session_matches view
-  const { data: matchRows, error: mErr } = await supabase
-    .from('session_matches')
-    .select('session_id, title, poster_url, match_percentage, available_on')
-    .in('session_id', activeSessionIds)
-    .order('match_percentage', { ascending: false });
+  // 4a. Check for host-selected winners
+  const sessionsWithSelection = sessions.filter((s) => s.selected_match_id);
+  const selectedMatchIds = sessionsWithSelection.map((s) => s.selected_match_id);
 
-  if (mErr) throw mErr;
   const topMatchMap: Record<string, SessionHistoryItem['topMatch']> = {};
-  (matchRows ?? []).forEach((r) => {
-    if (!topMatchMap[r.session_id]) {
-      topMatchMap[r.session_id] = {
-        title: r.title,
-        posterUrl: r.poster_url ?? '',
-        matchPercentage: Number(r.match_percentage),
-        availableOn: r.available_on ?? [],
-      };
+
+  if (selectedMatchIds.length > 0) {
+    const { data: selectedItems, error: selErr } = await supabase
+      .from('catalog_items')
+      .select('id, session_id, title, poster_url, available_on')
+      .in('id', selectedMatchIds);
+
+    if (selErr) throw selErr;
+
+    const selectedItemMap = new Map(
+      (selectedItems ?? []).map((item) => [item.id, item])
+    );
+
+    for (const s of sessionsWithSelection) {
+      const item = selectedItemMap.get(s.selected_match_id);
+      if (item) {
+        topMatchMap[s.id] = {
+          title: item.title,
+          posterUrl: item.poster_url ?? '',
+          matchPercentage: 1,
+          availableOn: item.available_on ?? [],
+        };
+      }
     }
-  });
+  }
+
+  // 4b. Fall back to session_matches view for sessions without a selection
+  const sessionIdsWithoutSelection = activeSessionIds.filter((id) => !topMatchMap[id]);
+
+  if (sessionIdsWithoutSelection.length > 0) {
+    const { data: matchRows, error: mErr } = await supabase
+      .from('session_matches')
+      .select('session_id, title, poster_url, match_percentage, available_on')
+      .in('session_id', sessionIdsWithoutSelection)
+      .order('match_percentage', { ascending: false })
+      .order('tmdb_rating', { ascending: false });
+
+    if (mErr) throw mErr;
+    (matchRows ?? []).forEach((r) => {
+      if (!topMatchMap[r.session_id]) {
+        topMatchMap[r.session_id] = {
+          title: r.title,
+          posterUrl: r.poster_url ?? '',
+          matchPercentage: Number(r.match_percentage),
+          availableOn: r.available_on ?? [],
+        };
+      }
+    });
+  }
 
   // 5. Assemble results
   return sessions.map((s) => ({

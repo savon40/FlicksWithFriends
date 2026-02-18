@@ -202,6 +202,49 @@ export default function FiltersScreen() {
           </View>
         </View>
 
+        {/* Animation */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Animation</Text>
+          <View style={styles.toggleRow}>
+            <TouchableOpacity
+              style={[
+                styles.togglePill,
+                filters.animation === 'include' && styles.togglePillActive,
+              ]}
+              onPress={() =>
+                updateFilter('animation', filters.animation === 'include' ? null : 'include')
+              }
+            >
+              <Text
+                style={[
+                  styles.togglePillText,
+                  filters.animation === 'include' && styles.togglePillTextActive,
+                ]}
+              >
+                Include
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.togglePill,
+                filters.animation === 'exclude' && styles.togglePillActive,
+              ]}
+              onPress={() =>
+                updateFilter('animation', filters.animation === 'exclude' ? null : 'exclude')
+              }
+            >
+              <Text
+                style={[
+                  styles.togglePillText,
+                  filters.animation === 'exclude' && styles.togglePillTextActive,
+                ]}
+              >
+                Exclude
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Mood */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Mood</Text>

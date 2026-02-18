@@ -40,7 +40,6 @@ export const GENRES = [
   'Sci-Fi',
   'Romance',
   'Documentary',
-  'Animation',
   'Fantasy',
   'Mystery',
   'Crime',

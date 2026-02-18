@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -20,16 +20,31 @@ import { STREAMING_SERVICES, AVATARS } from '@/lib/constants';
 import { useSession } from '@/lib/SessionContext';
 import { useMatches } from '@/hooks/useMatches';
 import { useParticipants } from '@/hooks/useParticipants';
-import { updateSessionStatus } from '@/lib/sessionService';
+import { updateSessionStatus, selectSessionWinner } from '@/lib/sessionService';
 
 export default function MatchesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { sessionId, matchThreshold, resetSession } = useSession();
+  const { sessionId, matchThreshold, isHost, adminTest, resetSession } = useSession();
   const { matches, loading, error: matchesError, retry: retryMatches } = useMatches(sessionId, matchThreshold);
   const { participants } = useParticipants(sessionId);
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const topMatch = matches[0];
   const otherMatches = matches.slice(1);
+
+  // In admin test mode, auto-select top match
+  useEffect(() => {
+    if (adminTest && topMatch && !selectedMatchId) {
+      setSelectedMatchId(topMatch.catalogItemId);
+    }
+  }, [adminTest, topMatch, selectedMatchId]);
+
+  const handleSelectMatch = (catalogItemId: string) => {
+    if (!isHost) return;
+    setSelectedMatchId(catalogItemId);
+  };
+
+  const finalizeDisabled = !selectedMatchId && !adminTest;
 
   const handleLeaveSession = () => {
     Alert.alert('Leave Session', 'Are you sure you want to leave this session?', [
@@ -46,13 +61,16 @@ export default function MatchesScreen() {
   };
 
   const handleFinalize = async () => {
-    if (sessionId) {
-      try {
-        await updateSessionStatus(sessionId, 'completed');
-      } catch (e: any) {
-        console.warn('[FlickPick] Failed to mark session completed:', e.message);
-        Sentry.captureException(e, { tags: { action: 'finalizeSession' } });
+    if (!sessionId) return;
+    if (finalizeDisabled) return;
+    try {
+      if (selectedMatchId) {
+        await selectSessionWinner(sessionId, selectedMatchId);
       }
+      await updateSessionStatus(sessionId, 'completed');
+    } catch (e: any) {
+      console.warn('[FlickPick] Failed to finalize session:', e.message);
+      Sentry.captureException(e, { tags: { action: 'finalizeSession' } });
     }
     resetSession();
     router.replace('/(tabs)/history');
@@ -94,11 +112,32 @@ export default function MatchesScreen() {
         {matchesError && <InlineError message={matchesError} retry={retryMatches} />}
 
         {/* Top Match Card */}
-        {topMatch && <TopMatchCard match={topMatch} participants={participants} />}
+        {topMatch && (
+          <TouchableOpacity
+            activeOpacity={isHost ? 0.7 : 1}
+            onPress={() => handleSelectMatch(topMatch.catalogItemId)}
+          >
+            <TopMatchCard
+              match={topMatch}
+              participants={participants}
+              selected={selectedMatchId === topMatch.catalogItemId}
+            />
+          </TouchableOpacity>
+        )}
 
         {/* Other Matches */}
         {otherMatches.map((match, index) => (
-          <SecondaryMatchCard key={match.catalogItemId} match={match} rank={index + 2} />
+          <TouchableOpacity
+            key={match.catalogItemId}
+            activeOpacity={isHost ? 0.7 : 1}
+            onPress={() => handleSelectMatch(match.catalogItemId)}
+          >
+            <SecondaryMatchCard
+              match={match}
+              rank={index + 2}
+              selected={selectedMatchId === match.catalogItemId}
+            />
+          </TouchableOpacity>
         ))}
 
         <Text style={styles.tmdbAttribution}>Data provided by TMDB</Text>
@@ -107,10 +146,18 @@ export default function MatchesScreen() {
 
       {/* Finalize Button */}
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
-        <TouchableOpacity style={styles.finalizeButton} activeOpacity={0.8} onPress={handleFinalize}>
+        <TouchableOpacity
+          style={[styles.finalizeButton, finalizeDisabled && styles.finalizeButtonDisabled]}
+          activeOpacity={finalizeDisabled ? 1 : 0.8}
+          onPress={handleFinalize}
+          disabled={finalizeDisabled}
+        >
           <Text style={styles.finalizeButtonText}>Finalize & Watch</Text>
           <Ionicons name="arrow-forward" size={20} color={Colors.white} />
         </TouchableOpacity>
+        {finalizeDisabled && (
+          <Text style={styles.selectHintText}>Tap a match to select your pick</Text>
+        )}
       </View>
     </View>
   );
@@ -119,14 +166,21 @@ export default function MatchesScreen() {
 function TopMatchCard({
   match,
   participants,
+  selected,
 }: {
   match: Match;
   participants: { id: string; avatarSeed: number; nickname: string }[];
+  selected: boolean;
 }) {
   return (
-    <View style={styles.topCard}>
+    <View style={[styles.topCard, selected && styles.selectedCard]}>
       {/* Gold glow border */}
       <View style={styles.topCardInner}>
+        {selected && (
+          <View style={styles.selectedCheckmark}>
+            <Ionicons name="checkmark-circle" size={24} color={Colors.primary} />
+          </View>
+        )}
         {/* Badges */}
         <View style={styles.topBadgeRow}>
           <View style={styles.topPickBadge}>
@@ -198,15 +252,19 @@ function TopMatchCard({
   );
 }
 
-function SecondaryMatchCard({ match, rank }: { match: Match; rank: number }) {
+function SecondaryMatchCard({ match, rank, selected }: { match: Match; rank: number; selected: boolean }) {
   const barColor =
     match.tier === 'strong' ? Colors.orange : match.tier === 'soft' ? Colors.muted : Colors.primary;
 
   return (
-    <View style={[styles.secondaryCard, rank > 2 && { opacity: 0.8 }]}>
+    <View style={[styles.secondaryCard, rank > 2 && { opacity: 0.8 }, selected && styles.selectedCard]}>
       {/* Rank Badge */}
       <View style={styles.rankBadge}>
-        <Text style={styles.rankText}>{rank}</Text>
+        {selected ? (
+          <Ionicons name="checkmark" size={14} color={Colors.primary} />
+        ) : (
+          <Text style={styles.rankText}>{rank}</Text>
+        )}
       </View>
 
       <Image source={match.posterUrl} style={styles.secondaryPoster} contentFit="cover" transition={200} />
@@ -552,5 +610,24 @@ const styles = StyleSheet.create({
     color: Colors.mutedLight,
     textAlign: 'center',
     marginTop: 16,
+  },
+  finalizeButtonDisabled: {
+    opacity: 0.4,
+  },
+  selectHintText: {
+    fontSize: 13,
+    color: Colors.mutedLight,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  selectedCard: {
+    borderColor: Colors.primary,
+    borderWidth: 2,
+  },
+  selectedCheckmark: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 10,
   },
 });

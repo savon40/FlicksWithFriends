@@ -37,12 +37,10 @@ import { recordSwipe, updateSwipeProgress } from '@/lib/sessionService';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3;
 
-const DEV_SWIPE_LIMIT = 10;
-
 export default function SwipeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { sessionId, sessionCode, participantId, resetSession } = useSession();
+  const { sessionId, sessionCode, participantId, adminTest, resetSession } = useSession();
   const { catalog, loading: catalogLoading, error: catalogError, retry: retryCatalog } = useCatalog(sessionId);
   const { participants } = useParticipants(sessionId);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -62,12 +60,22 @@ export default function SwipeScreen() {
     ]);
   };
 
-  // Auto-navigate to matches after DEV_SWIPE_LIMIT swipes (for testing)
+  // When user finishes swiping, navigate to matches (or wait for others)
   useEffect(() => {
-    if (currentIndex >= DEV_SWIPE_LIMIT && catalog.length > 0) {
+    if (currentIndex < catalog.length || catalog.length === 0) return;
+
+    if (adminTest) {
+      // Solo admin test — go straight to matches
+      router.push('/(session)/matches');
+      return;
+    }
+
+    // Multi-player — check if everyone is done
+    const allDone = participants.every((p) => p.swipeProgress >= catalog.length);
+    if (allDone) {
       router.push('/(session)/matches');
     }
-  }, [currentIndex, catalog.length]);
+  }, [currentIndex, catalog.length, adminTest, participants]);
 
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -206,13 +214,26 @@ export default function SwipeScreen() {
   }
 
   if (currentIndex >= catalog.length) {
+    const allDone = participants.every((p) => p.swipeProgress >= catalog.length);
     return (
       <View style={[styles.container, styles.doneContainer, { paddingTop: insets.top }]}>
-        <Ionicons name="checkmark-circle" size={64} color={Colors.primary} />
-        <Text style={styles.doneTitle}>All Done!</Text>
-        <Text style={styles.doneSubtitle}>
-          You've swiped through all the movies. Check the Matches tab to see results.
-        </Text>
+        {adminTest || allDone ? (
+          <>
+            <Ionicons name="checkmark-circle" size={64} color={Colors.primary} />
+            <Text style={styles.doneTitle}>All Done!</Text>
+            <Text style={styles.doneSubtitle}>
+              You've swiped through all the movies. Check the Matches tab to see results.
+            </Text>
+          </>
+        ) : (
+          <>
+            <ActivityIndicator size="large" color={Colors.primary} />
+            <Text style={styles.doneTitle}>Waiting for everyone...</Text>
+            <Text style={styles.doneSubtitle}>
+              You're done! Waiting for the rest of the group to finish swiping.
+            </Text>
+          </>
+        )}
       </View>
     );
   }

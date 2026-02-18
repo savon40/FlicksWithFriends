@@ -172,6 +172,15 @@ function buildDiscoverParams(
     params.certification = filters.certifications.join('|');
   }
 
+  // Animation filter
+  if (filters.animation === 'exclude') {
+    params.without_genres = '16';
+  } else if (filters.animation === 'include') {
+    params.with_genres = params.with_genres
+      ? `${params.with_genres},16`
+      : '16';
+  }
+
   return params;
 }
 
@@ -389,8 +398,8 @@ export async function buildCatalog(
     catalog = includeMovies ? movies : tvShows;
   }
 
-  // Reassign displayOrder sequentially
-  catalog = catalog.map((item, i) => ({ ...item, displayOrder: i + 1 }));
+  // Reassign displayOrder sequentially and cap at 20 items
+  catalog = catalog.slice(0, 20).map((item, i) => ({ ...item, displayOrder: i + 1 }));
 
   // Fallback: if zero results, drop explicit genre picks but keep mood-derived genres
   if (catalog.length === 0) {
@@ -433,6 +442,7 @@ export async function buildCatalog(
     const fallbackItems = await Promise.all(fallbackPromises);
     catalog = fallbackItems
       .filter((item): item is CatalogItem => item !== null)
+      .slice(0, 20)
       .map((item, i) => ({ ...item, displayOrder: i + 1 }));
   }
 

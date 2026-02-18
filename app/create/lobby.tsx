@@ -31,7 +31,8 @@ import { getDiscoverPreviewUrls } from '@/lib/tmdb';
 export default function HostLobbyScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { sessionCode, sessionId, selectedServices, filters } = useSession();
+  const { sessionCode, sessionId, selectedServices, filters, setAdminTest } = useSession();
+  const [adminMode, setAdminMode] = useState(false);
   const { participants } = useParticipants(sessionId);
   const [copied, setCopied] = useState(false);
   const [apiExpanded, setApiExpanded] = useState(false);
@@ -56,8 +57,16 @@ export default function HostLobbyScreen() {
     } catch {}
   };
 
+  const startButtonDisabled = participants.length < 2 && !adminMode;
+
+  const handleAdminTest = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setAdminMode(true);
+    setAdminTest(true);
+  };
+
   const handleStartSwiping = async () => {
-    if (!sessionId) return;
+    if (!sessionId || startButtonDisabled) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
       await updateSessionStatus(sessionId, 'active');
@@ -84,6 +93,8 @@ export default function HostLobbyScreen() {
   if (yearLabel && filters.releaseYearRange !== 'any') filterTags.push(yearLabel);
   if (filters.minRating && filters.minRating > 0) filterTags.push(`${filters.minRating}+ Rating`);
   if (filters.certifications.length > 0) filterTags.push(`Rated ${filters.certifications.join(', ')}`);
+  if (filters.animation === 'include') filterTags.push('Animation Only');
+  if (filters.animation === 'exclude') filterTags.push('No Animation');
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -220,14 +231,23 @@ export default function HostLobbyScreen() {
 
       {/* Start Button */}
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
+        {!adminMode && participants.length < 2 && (
+          <TouchableOpacity onPress={handleAdminTest} activeOpacity={0.7}>
+            <Text style={styles.adminTestText}>Admin Test</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
-          style={styles.startButton}
+          style={[styles.startButton, startButtonDisabled && styles.startButtonDisabled]}
           onPress={handleStartSwiping}
-          activeOpacity={0.8}
+          activeOpacity={startButtonDisabled ? 1 : 0.8}
+          disabled={startButtonDisabled}
         >
           <Text style={styles.startButtonText}>Start Swiping</Text>
           <Ionicons name="play" size={20} color={Colors.white} />
         </TouchableOpacity>
+        {startButtonDisabled && (
+          <Text style={styles.waitingText}>Waiting for more people to join...</Text>
+        )}
       </View>
     </View>
   );
@@ -506,5 +526,12 @@ const styles = StyleSheet.create({
     color: Colors.mutedLight,
     textAlign: 'center',
     marginTop: 8,
+  },
+  adminTestText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.muted,
+    textAlign: 'center',
+    marginBottom: 10,
   },
 });
