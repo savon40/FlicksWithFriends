@@ -32,7 +32,7 @@ import { CatalogItem } from '@/types';
 import { useSession } from '@/lib/SessionContext';
 import { useCatalog } from '@/hooks/useCatalog';
 import { useParticipants } from '@/hooks/useParticipants';
-import { recordSwipe, updateSwipeProgress } from '@/lib/sessionService';
+import { recordSwipe, updateSwipeProgress, fetchParticipants } from '@/lib/sessionService';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3;
@@ -60,22 +60,41 @@ export default function SwipeScreen() {
     ]);
   };
 
+  const isDone = currentIndex >= catalog.length && catalog.length > 0;
+
   // When user finishes swiping, navigate to matches (or wait for others)
+  // Uses both realtime updates AND polling as fallback
   useEffect(() => {
     if (currentIndex < catalog.length || catalog.length === 0) return;
 
     if (adminTest) {
-      // Solo admin test — go straight to matches
       router.push('/(session)/matches');
       return;
     }
 
-    // Multi-player — check if everyone is done
+    // Check from realtime updates
     const allDone = participants.every((p) => p.swipeProgress >= catalog.length);
     if (allDone) {
       router.push('/(session)/matches');
     }
   }, [currentIndex, catalog.length, adminTest, participants]);
+
+  // Polling fallback: re-fetch participants every 3s when waiting
+  useEffect(() => {
+    if (!isDone || adminTest || !sessionId) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const fresh = await fetchParticipants(sessionId);
+        const allDone = fresh.every((p) => p.swipeProgress >= catalog.length);
+        if (allDone) {
+          router.push('/(session)/matches');
+        }
+      } catch {}
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [isDone, adminTest, sessionId, catalog.length]);
 
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);

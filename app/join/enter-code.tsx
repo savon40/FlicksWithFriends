@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   TextInput,
   KeyboardAvoidingView,
+  ScrollView,
   Platform,
   Dimensions,
   Alert,
@@ -112,7 +113,12 @@ export default function EnterCodeScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.contentInner}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.instruction}>Enter the 6-character code shared by the host</Text>
 
         {/* Code Input */}
@@ -177,7 +183,7 @@ export default function EnterCodeScreen() {
             })}
           </View>
         </View>
-      </View>
+      </ScrollView>
 
       {/* Join Button */}
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
@@ -229,8 +235,11 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  contentInner: {
     paddingHorizontal: 24,
     paddingTop: 40,
+    paddingBottom: 16,
   },
   instruction: {
     fontSize: 15,

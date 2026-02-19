@@ -144,19 +144,25 @@ export default function MatchesScreen() {
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* Finalize Button */}
+      {/* Bottom Bar */}
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
-        <TouchableOpacity
-          style={[styles.finalizeButton, finalizeDisabled && styles.finalizeButtonDisabled]}
-          activeOpacity={finalizeDisabled ? 1 : 0.8}
-          onPress={handleFinalize}
-          disabled={finalizeDisabled}
-        >
-          <Text style={styles.finalizeButtonText}>Finalize & Watch</Text>
-          <Ionicons name="arrow-forward" size={20} color={Colors.white} />
-        </TouchableOpacity>
-        {finalizeDisabled && (
-          <Text style={styles.selectHintText}>Tap a match to select your pick</Text>
+        {isHost ? (
+          <>
+            <TouchableOpacity
+              style={[styles.finalizeButton, finalizeDisabled && styles.finalizeButtonDisabled]}
+              activeOpacity={finalizeDisabled ? 1 : 0.8}
+              onPress={handleFinalize}
+              disabled={finalizeDisabled}
+            >
+              <Text style={styles.finalizeButtonText}>Finalize & Watch</Text>
+              <Ionicons name="arrow-forward" size={20} color={Colors.white} />
+            </TouchableOpacity>
+            {finalizeDisabled && (
+              <Text style={styles.selectHintText}>Tap a match to select your pick</Text>
+            )}
+          </>
+        ) : (
+          <Text style={styles.waitingForHostText}>Waiting for host to finalize pick...</Text>
         )}
       </View>
     </View>
@@ -190,7 +196,7 @@ function TopMatchCard({
             <Ionicons name="trophy" size={14} color={Colors.gold} />
             <Text style={styles.favoriteText}>Group Favorite</Text>
           </View>
-          <Text style={styles.genreInfo}>
+          <Text style={styles.genreInfo} numberOfLines={1}>
             {match.genres.join(' · ')}
           </Text>
         </View>
@@ -410,6 +416,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.muted,
     marginLeft: 'auto',
+    flexShrink: 1,
   },
   topMovieRow: {
     flexDirection: 'row',
@@ -629,5 +636,12 @@ const styles = StyleSheet.create({
     top: 12,
     right: 12,
     zIndex: 10,
+  },
+  waitingForHostText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.muted,
+    textAlign: 'center',
+    paddingVertical: 16,
   },
 });
