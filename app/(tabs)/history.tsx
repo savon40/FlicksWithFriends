@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useFocusEffect } from 'expo-router';
@@ -13,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '@/constants/Colors';
 import { InlineError } from '@/components/ErrorFallback';
-import { STREAMING_SERVICES } from '@/lib/constants';
+import { STREAMING_SERVICES, AVATARS } from '@/lib/constants';
 import { useSessionHistory } from '@/hooks/useSessionHistory';
 import { SessionHistoryItem } from '@/types';
 
@@ -32,89 +33,175 @@ function formatDate(iso: string): string {
 }
 
 function HistoryCard({ item }: { item: SessionHistoryItem }) {
+  const [expanded, setExpanded] = useState(false);
   const matchService = item.topMatch?.availableOn?.[0]
     ? STREAMING_SERVICES.find((s) => s.id === item.topMatch!.availableOn[0])
     : null;
 
   return (
     <View style={styles.card}>
-      {/* Poster thumbnail */}
-      <View style={styles.posterContainer}>
-        {item.topMatch?.posterUrl ? (
-          <Image
-            source={item.topMatch.posterUrl}
-            style={styles.poster}
-            contentFit="cover"
-            transition={200}
-          />
-        ) : (
-          <View style={[styles.poster, styles.posterPlaceholder]}>
-            <Ionicons name="film-outline" size={28} color={Colors.mutedLight} />
-          </View>
-        )}
-      </View>
-
-      {/* Info */}
-      <View style={styles.cardInfo}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.sessionCode}>#{item.sessionCode}</Text>
-          <Text style={styles.dateText}>{formatDate(item.createdAt)}</Text>
+      {/* Top row: poster + info */}
+      <View style={styles.cardTopRow}>
+        {/* Poster thumbnail */}
+        <View style={styles.posterContainer}>
+          {item.topMatch?.posterUrl ? (
+            <Image
+              source={item.topMatch.posterUrl}
+              style={styles.poster}
+              contentFit="cover"
+              transition={200}
+            />
+          ) : (
+            <View style={[styles.poster, styles.posterPlaceholder]}>
+              <Ionicons name="film-outline" size={28} color={Colors.mutedLight} />
+            </View>
+          )}
         </View>
 
-        {item.topMatch ? (
-          <>
-            <Text style={styles.movieTitle} numberOfLines={1}>
-              {item.topMatch.title}
-            </Text>
-            <View style={styles.metaRow}>
-              <View style={styles.matchBadge}>
-                <Ionicons name="flame" size={12} color={Colors.primary} />
-                <Text style={styles.matchText}>
-                  {Math.round(item.topMatch.matchPercentage)}%
-                </Text>
+        {/* Info */}
+        <View style={styles.cardInfo}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.sessionCode}>#{item.sessionCode}</Text>
+            <Text style={styles.dateText}>{formatDate(item.createdAt)}</Text>
+          </View>
+
+          {item.topMatch ? (
+            <>
+              <Text style={styles.movieTitle} numberOfLines={1}>
+                {item.topMatch.title}
+              </Text>
+              <View style={styles.metaRow}>
+                <View style={styles.matchBadge}>
+                  <Ionicons name="flame" size={12} color={Colors.primary} />
+                  <Text style={styles.matchText}>
+                    {Math.round(item.topMatch.matchPercentage)}%
+                  </Text>
+                </View>
+                {matchService && (
+                  <View style={[styles.servicePill, { backgroundColor: matchService.color }]}>
+                    <Text style={styles.servicePillText}>{matchService.name}</Text>
+                  </View>
+                )}
               </View>
-              {matchService && (
-                <View style={[styles.servicePill, { backgroundColor: matchService.color }]}>
-                  <Text style={styles.servicePillText}>{matchService.name}</Text>
+            </>
+          ) : (
+            <Text style={styles.noMatchText}>No matches yet</Text>
+          )}
+
+          <TouchableOpacity
+            style={styles.participantRow}
+            onPress={() => setExpanded(!expanded)}
+            activeOpacity={0.6}
+          >
+            <View style={styles.avatarStack}>
+              {item.participants.slice(0, 4).map((p, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.historyAvatar,
+                    { marginLeft: i > 0 ? -6 : 0, zIndex: 4 - i },
+                  ]}
+                >
+                  <Text style={styles.historyAvatarText}>
+                    {AVATARS[p.avatarSeed % AVATARS.length].emoji}
+                  </Text>
+                </View>
+              ))}
+              {item.participantCount > 4 && (
+                <View style={[styles.historyAvatar, styles.historyAvatarOverflow, { marginLeft: -6 }]}>
+                  <Text style={styles.historyAvatarOverflowText}>+{item.participantCount - 4}</Text>
                 </View>
               )}
             </View>
-          </>
-        ) : (
-          <Text style={styles.noMatchText}>No matches yet</Text>
-        )}
-
-        <View style={styles.participantRow}>
-          <Ionicons name="people-outline" size={14} color={Colors.muted} />
-          <Text style={styles.participantText}>
-            {item.participantCount} participant{item.participantCount !== 1 ? 's' : ''}
-          </Text>
-          <View
-            style={[
-              styles.statusChip,
-              item.status === 'active' ? styles.statusActive : styles.statusCompleted,
-            ]}
-          >
-            <Text
+            <Text style={styles.participantNames} numberOfLines={1}>
+              {item.participants
+                .slice(0, 3)
+                .map((p) => p.nickname)
+                .join(', ')}
+              {item.participantCount > 3 ? ` +${item.participantCount - 3}` : ''}
+            </Text>
+            <Ionicons
+              name={expanded ? 'chevron-up' : 'chevron-down'}
+              size={14}
+              color={Colors.muted}
+            />
+            <View
               style={[
-                styles.statusChipText,
-                item.status === 'active'
-                  ? styles.statusActiveText
-                  : styles.statusCompletedText,
+                styles.statusChip,
+                item.status === 'active' ? styles.statusActive : styles.statusCompleted,
               ]}
             >
-              {item.status === 'active' ? 'Active' : 'Completed'}
-            </Text>
-          </View>
+              <Text
+                style={[
+                  styles.statusChipText,
+                  item.status === 'active'
+                    ? styles.statusActiveText
+                    : styles.statusCompletedText,
+                ]}
+              >
+                {item.status === 'active' ? 'Active' : 'Completed'}
+              </Text>
+            </View>
+          </TouchableOpacity>
         </View>
       </View>
+
+      {/* Expanded participant list */}
+      {expanded && (
+        <View style={styles.expandedParticipants}>
+          <View style={styles.expandedGrid}>
+            {item.participants.map((p, i) => (
+              <View key={i} style={styles.expandedRow}>
+                <View style={styles.expandedAvatar}>
+                  <Text style={styles.expandedAvatarText}>
+                    {AVATARS[p.avatarSeed % AVATARS.length].emoji}
+                  </Text>
+                </View>
+                <Text style={styles.expandedName} numberOfLines={1}>{p.nickname}</Text>
+                {p.isHost && (
+                  <View style={styles.hostBadge}>
+                    <Text style={styles.hostBadgeText}>HOST</Text>
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
     </View>
   );
 }
 
+const DUMMY_SESSION: SessionHistoryItem = {
+  sessionId: 'dummy-10p',
+  sessionCode: 'PARTY1',
+  status: 'completed',
+  createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+  participantCount: 10,
+  participants: [
+    { nickname: 'Alex', avatarSeed: 0, isHost: true },
+    { nickname: 'Jordan', avatarSeed: 1, isHost: false },
+    { nickname: 'Sam', avatarSeed: 2, isHost: false },
+    { nickname: 'Taylor', avatarSeed: 3, isHost: false },
+    { nickname: 'Casey', avatarSeed: 4, isHost: false },
+    { nickname: 'Morgan', avatarSeed: 5, isHost: false },
+    { nickname: 'Riley', avatarSeed: 6, isHost: false },
+    { nickname: 'Quinn', avatarSeed: 7, isHost: false },
+    { nickname: 'Drew', avatarSeed: 8, isHost: false },
+    { nickname: 'Avery', avatarSeed: 9, isHost: false },
+  ],
+  topMatch: {
+    title: 'The Dark Knight',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911BTUgMe1VBku.jpg',
+    matchPercentage: 90,
+    availableOn: ['max'],
+  },
+};
+
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
-  const { sessions, loading, error, refresh } = useSessionHistory();
+  const { sessions: realSessions, loading, error, refresh } = useSessionHistory();
+  const sessions = [DUMMY_SESSION, ...realSessions];
 
   useFocusEffect(
     useCallback(() => {
@@ -180,12 +267,14 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   card: {
-    flexDirection: 'row',
     backgroundColor: Colors.card,
     borderRadius: 16,
     padding: 12,
     borderWidth: 1,
     borderColor: Colors.cardBorder,
+  },
+  cardTopRow: {
+    flexDirection: 'row',
   },
   posterContainer: {
     marginRight: 12,
@@ -267,9 +356,33 @@ const styles = StyleSheet.create({
   participantRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
-  participantText: {
+  avatarStack: {
+    flexDirection: 'row',
+  },
+  historyAvatar: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: Colors.mutedBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: Colors.card,
+  },
+  historyAvatarText: {
+    fontSize: 11,
+  },
+  historyAvatarOverflow: {
+    backgroundColor: Colors.cardBorder,
+  },
+  historyAvatarOverflowText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: Colors.muted,
+  },
+  participantNames: {
     fontSize: 12,
     color: Colors.muted,
     flex: 1,
@@ -294,6 +407,52 @@ const styles = StyleSheet.create({
   },
   statusCompletedText: {
     color: Colors.muted,
+  },
+  expandedParticipants: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: Colors.cardBorder,
+  },
+  expandedGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  expandedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '48%',
+  },
+  expandedAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.mutedBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  expandedAvatarText: {
+    fontSize: 14,
+  },
+  expandedName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.foreground,
+    flex: 1,
+  },
+  hostBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    backgroundColor: 'rgba(0, 188, 212, 0.1)',
+  },
+  hostBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.primary,
+    letterSpacing: 0.5,
   },
   emptyState: {
     flex: 1,

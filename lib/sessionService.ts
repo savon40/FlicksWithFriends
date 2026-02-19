@@ -325,16 +325,25 @@ export async function fetchSessionHistory(
 
   const activeSessionIds = sessions.map((s) => s.id);
 
-  // 3. Get participant counts
-  const { data: countRows, error: cErr } = await supabase
+  // 3. Get participant details
+  const { data: participantDetailRows, error: cErr } = await supabase
     .from('participants')
-    .select('session_id')
-    .in('session_id', activeSessionIds);
+    .select('session_id, nickname, avatar_seed, is_host')
+    .in('session_id', activeSessionIds)
+    .order('is_host', { ascending: false })
+    .order('joined_at', { ascending: true });
 
   if (cErr) throw cErr;
   const countMap: Record<string, number> = {};
-  (countRows ?? []).forEach((r) => {
+  const participantsMap: Record<string, { nickname: string; avatarSeed: number; isHost: boolean }[]> = {};
+  (participantDetailRows ?? []).forEach((r) => {
     countMap[r.session_id] = (countMap[r.session_id] || 0) + 1;
+    if (!participantsMap[r.session_id]) participantsMap[r.session_id] = [];
+    participantsMap[r.session_id].push({
+      nickname: r.nickname ?? 'Guest',
+      avatarSeed: r.avatar_seed,
+      isHost: r.is_host,
+    });
   });
 
   // 4a. Check for host-selected winners
@@ -399,6 +408,7 @@ export async function fetchSessionHistory(
     status: s.status as SessionStatus,
     createdAt: s.created_at,
     participantCount: countMap[s.id] || 0,
+    participants: participantsMap[s.id] || [],
     topMatch: topMatchMap[s.id] || null,
   }));
 }

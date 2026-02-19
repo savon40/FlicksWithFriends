@@ -86,12 +86,19 @@ export interface Match {
 }
 
 // ─── Session History ──────────────────────────────────────
+export interface SessionHistoryParticipant {
+  nickname: string;
+  avatarSeed: number;
+  isHost: boolean;
+}
+
 export interface SessionHistoryItem {
   sessionId: string;
   sessionCode: string;
   status: SessionStatus;
   createdAt: string;
   participantCount: number;
+  participants: SessionHistoryParticipant[];
   topMatch: {
     title: string;
     posterUrl: string;
