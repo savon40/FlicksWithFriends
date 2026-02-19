@@ -172,36 +172,9 @@ function HistoryCard({ item }: { item: SessionHistoryItem }) {
   );
 }
 
-const DUMMY_SESSION: SessionHistoryItem = {
-  sessionId: 'dummy-10p',
-  sessionCode: 'PARTY1',
-  status: 'completed',
-  createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-  participantCount: 10,
-  participants: [
-    { nickname: 'Alex', avatarSeed: 0, isHost: true },
-    { nickname: 'Jordan', avatarSeed: 1, isHost: false },
-    { nickname: 'Sam', avatarSeed: 2, isHost: false },
-    { nickname: 'Taylor', avatarSeed: 3, isHost: false },
-    { nickname: 'Casey', avatarSeed: 4, isHost: false },
-    { nickname: 'Morgan', avatarSeed: 5, isHost: false },
-    { nickname: 'Riley', avatarSeed: 6, isHost: false },
-    { nickname: 'Quinn', avatarSeed: 7, isHost: false },
-    { nickname: 'Drew', avatarSeed: 8, isHost: false },
-    { nickname: 'Avery', avatarSeed: 9, isHost: false },
-  ],
-  topMatch: {
-    title: 'The Dark Knight',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911BTUgMe1VBku.jpg',
-    matchPercentage: 90,
-    availableOn: ['max'],
-  },
-};
-
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
-  const { sessions: realSessions, loading, error, refresh } = useSessionHistory();
-  const sessions = [DUMMY_SESSION, ...realSessions];
+  const { sessions, loading, error, refresh } = useSessionHistory();
 
   useFocusEffect(
     useCallback(() => {

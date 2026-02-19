@@ -25,22 +25,25 @@ const TV_GENRE_MAP: Record<string, number> = {
   'Sci-Fi': 10765,
 };
 
-const PROVIDER_MAP: Record<string, number> = {
-  netflix: 8,
-  hulu: 15,
-  max: 1899,
-  prime: 119,
-  disney: 337,
-  peacock: 386,
-  paramount: 531,
-  apple: 350,
-  tubi: 73,
-  pluto: 300,
+const PROVIDER_MAP: Record<string, number[]> = {
+  netflix: [8],
+  hulu: [15],
+  max: [1899],
+  prime: [9],
+  disney: [337],
+  peacock: [386],
+  paramount: [2303, 2616],
+  apple: [350],
+  tubi: [73],
+  pluto: [300],
 };
 
-const REVERSE_PROVIDER_MAP: Record<number, string> = Object.fromEntries(
-  Object.entries(PROVIDER_MAP).map(([k, v]) => [v, k])
-);
+const REVERSE_PROVIDER_MAP: Record<number, string> = {};
+for (const [key, ids] of Object.entries(PROVIDER_MAP)) {
+  for (const id of ids) {
+    REVERSE_PROVIDER_MAP[id] = key;
+  }
+}
 
 const MOOD_GENRE_MAP: Record<string, string[]> = {
   chill: ['Drama', 'Romance'],
@@ -110,8 +113,7 @@ function buildDiscoverParams(
 
   // Streaming providers
   const providerIds = selectedServices
-    .map((s) => PROVIDER_MAP[s])
-    .filter(Boolean);
+    .flatMap((s) => PROVIDER_MAP[s] ?? []);
   if (providerIds.length > 0) {
     params.with_watch_providers = providerIds.join('|');
   }
