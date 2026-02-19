@@ -143,27 +143,44 @@ function buildDiscoverParams(
     }
   }
 
-  // Release year
-  if (filters.releaseYearRange && filters.releaseYearRange !== 'any') {
+  // Release year (supports multiple selections)
+  if (filters.releaseYearRange && filters.releaseYearRange.length > 0) {
     const dateGte = isTV ? 'first_air_date.gte' : 'primary_release_date.gte';
     const dateLte = isTV ? 'first_air_date.lte' : 'primary_release_date.lte';
 
-    switch (filters.releaseYearRange) {
-      case 'classic':
-        params[dateLte] = '1999-12-31';
-        break;
-      case '2000s':
-        params[dateGte] = '2000-01-01';
-        params[dateLte] = '2009-12-31';
-        break;
-      case '2010s':
-        params[dateGte] = '2010-01-01';
-        params[dateLte] = '2019-12-31';
-        break;
-      case 'recent':
-        params[dateGte] = '2020-01-01';
-        break;
+    // Find the earliest start and latest end across all selected ranges
+    const ranges = filters.releaseYearRange;
+    let earliest: string | null = null;
+    let latest: string | null = null;
+
+    for (const range of ranges) {
+      switch (range) {
+        case 'classic':
+          earliest = null; // no lower bound
+          if (!latest || '1999-12-31' > latest) latest = '1999-12-31';
+          break;
+        case '2000s':
+          if (!earliest || '2000-01-01' < earliest) earliest = '2000-01-01';
+          if (!latest || '2009-12-31' > latest) latest = '2009-12-31';
+          break;
+        case '2010s':
+          if (!earliest || '2010-01-01' < earliest) earliest = '2010-01-01';
+          if (!latest || '2019-12-31' > latest) latest = '2019-12-31';
+          break;
+        case 'recent':
+          if (!earliest || '2020-01-01' < earliest) earliest = '2020-01-01';
+          latest = null; // no upper bound
+          break;
+      }
     }
+
+    // If classic is selected, no lower bound needed
+    if (ranges.includes('classic')) earliest = null;
+    // If recent is selected, no upper bound needed
+    if (ranges.includes('recent')) latest = null;
+
+    if (earliest) params[dateGte] = earliest;
+    if (latest) params[dateLte] = latest;
   }
 
   // MPAA certification (movies only)

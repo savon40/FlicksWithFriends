@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -41,7 +42,11 @@ export default function WelcomeScreen() {
         style={StyleSheet.absoluteFill}
       />
 
-      <View style={[styles.content, { paddingTop: insets.top + 40 }]}>
+      <ScrollView
+        style={[styles.content, { paddingTop: insets.top + 40 }]}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Logo Section */}
         <View style={styles.logoSection}>
           <Text style={styles.logoText}>FlickPick</Text>
@@ -87,11 +92,52 @@ export default function WelcomeScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* How It Works Section */}
+        <View style={styles.howItWorksSection}>
+          <Text style={styles.howItWorksTitle}>How It Works</Text>
+
+          <View style={styles.step}>
+            <View style={styles.stepNumber}>
+              <Text style={styles.stepNumberText}>1</Text>
+            </View>
+            <View style={styles.stepTextContainer}>
+              <Text style={styles.stepTitle}>Create or Join</Text>
+              <Text style={styles.stepDescription}>
+                Start a new session and share the code with friends, or join one with a code you've received.
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.step}>
+            <View style={styles.stepNumber}>
+              <Text style={styles.stepNumberText}>2</Text>
+            </View>
+            <View style={styles.stepTextContainer}>
+              <Text style={styles.stepTitle}>Swipe on Movies</Text>
+              <Text style={styles.stepDescription}>
+                Everyone swipes right on movies they'd watch and left on ones they'd skip.
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.step}>
+            <View style={styles.stepNumber}>
+              <Text style={styles.stepNumberText}>3</Text>
+            </View>
+            <View style={styles.stepTextContainer}>
+              <Text style={styles.stepTitle}>See Your Matches</Text>
+              <Text style={styles.stepDescription}>
+                When everyone's done, FlickPick shows the movies your group all agreed on. No more endless debates!
+              </Text>
+            </View>
+          </View>
+        </View>
+
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>No signup required. Sessions expire in 24h.</Text>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -103,6 +149,10 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 20,
   },
   logoSection: {
     alignItems: 'center',
@@ -185,6 +235,49 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
+  },
+  howItWorksSection: {
+    marginTop: 32,
+  },
+  howItWorksTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.foreground,
+    marginBottom: 16,
+  },
+  step: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  stepNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    marginTop: 2,
+  },
+  stepNumberText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  stepTextContainer: {
+    flex: 1,
+  },
+  stepTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.foreground,
+    marginBottom: 2,
+  },
+  stepDescription: {
+    fontSize: 14,
+    color: Colors.muted,
+    lineHeight: 20,
   },
   footer: {
     alignItems: 'center',

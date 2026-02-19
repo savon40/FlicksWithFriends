@@ -140,9 +140,7 @@ export default function FiltersScreen() {
           <Text style={styles.stepLabel}>Step 3 of 3</Text>
           <Text style={styles.headerTitle}>Set Filters</Text>
         </View>
-        <TouchableOpacity onPress={handleGenerateCode}>
-          <Text style={styles.skipText}>Skip</Text>
-        </TouchableOpacity>
+        <View style={{ width: 40 }} />
       </View>
 
       {/* Progress bar */}
@@ -297,25 +295,35 @@ export default function FiltersScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Release Year</Text>
           <View style={styles.chipGrid}>
-            {YEAR_OPTIONS.map((opt) => (
-              <TouchableOpacity
-                key={opt.id}
-                style={[
-                  styles.chip,
-                  filters.releaseYearRange === opt.id && styles.chipActive,
-                ]}
-                onPress={() => updateFilter('releaseYearRange', opt.id)}
-              >
-                <Text
+            {YEAR_OPTIONS.filter((opt) => opt.id !== 'any').map((opt) => {
+              const isSelected = filters.releaseYearRange.includes(opt.id);
+              return (
+                <TouchableOpacity
+                  key={opt.id}
                   style={[
-                    styles.chipText,
-                    filters.releaseYearRange === opt.id && styles.chipTextActive,
+                    styles.chip,
+                    isSelected && styles.chipActive,
                   ]}
+                  onPress={() =>
+                    updateFilter(
+                      'releaseYearRange',
+                      isSelected
+                        ? filters.releaseYearRange.filter((y) => y !== opt.id)
+                        : [...filters.releaseYearRange, opt.id]
+                    )
+                  }
                 >
-                  {opt.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      styles.chipText,
+                      isSelected && styles.chipTextActive,
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
@@ -441,12 +449,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.foreground,
     marginTop: 2,
-  },
-  skipText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.primary,
-    paddingHorizontal: 8,
   },
   progressBar: {
     height: 3,

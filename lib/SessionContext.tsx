@@ -36,7 +36,7 @@ const defaultFilters: SessionFilters = {
   genres: [],
   mood: null,
   runtimeRange: 'any',
-  releaseYearRange: 'any',
+  releaseYearRange: [],
   minRating: null,
   certifications: [],
   animation: null,

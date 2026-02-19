@@ -89,8 +89,12 @@ export default function HostLobbyScreen() {
   if (moodObj) filterTags.push(`${moodObj.emoji} ${moodObj.label}`);
   const runtimeLabel = RUNTIME_OPTIONS.find((r) => r.id === filters.runtimeRange)?.label;
   if (runtimeLabel && filters.runtimeRange !== 'any') filterTags.push(runtimeLabel);
-  const yearLabel = YEAR_OPTIONS.find((y) => y.id === filters.releaseYearRange)?.label;
-  if (yearLabel && filters.releaseYearRange !== 'any') filterTags.push(yearLabel);
+  if (filters.releaseYearRange.length > 0) {
+    filters.releaseYearRange.forEach((yr) => {
+      const yearLabel = YEAR_OPTIONS.find((y) => y.id === yr)?.label;
+      if (yearLabel) filterTags.push(yearLabel);
+    });
+  }
   if (filters.minRating && filters.minRating > 0) filterTags.push(`${filters.minRating}+ Rating`);
   if (filters.certifications.length > 0) filterTags.push(`Rated ${filters.certifications.join(', ')}`);
   if (filters.animation === 'include') filterTags.push('Animation Only');

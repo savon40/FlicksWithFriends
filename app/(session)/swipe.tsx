@@ -45,6 +45,7 @@ export default function SwipeScreen() {
   const { participants } = useParticipants(sessionId);
   const [currentIndex, setCurrentIndex] = useState(0);
   const cardStartTime = useRef(Date.now());
+  const hasNavigatedToMatches = useRef(false);
 
   const handleLeaveSession = () => {
     Alert.alert('Leave Session', 'Are you sure you want to leave this session?', [
@@ -65,30 +66,35 @@ export default function SwipeScreen() {
   // When user finishes swiping, navigate to matches (or wait for others)
   // Uses both realtime updates AND polling as fallback
   useEffect(() => {
+    if (hasNavigatedToMatches.current) return;
     if (currentIndex < catalog.length || catalog.length === 0) return;
 
     if (adminTest) {
-      router.push('/(session)/matches');
+      hasNavigatedToMatches.current = true;
+      router.replace('/(session)/matches');
       return;
     }
 
     // Check from realtime updates
     const allDone = participants.every((p) => p.swipeProgress >= catalog.length);
     if (allDone) {
-      router.push('/(session)/matches');
+      hasNavigatedToMatches.current = true;
+      router.replace('/(session)/matches');
     }
   }, [currentIndex, catalog.length, adminTest, participants]);
 
   // Polling fallback: re-fetch participants every 3s when waiting
   useEffect(() => {
-    if (!isDone || adminTest || !sessionId) return;
+    if (!isDone || adminTest || !sessionId || hasNavigatedToMatches.current) return;
 
     const interval = setInterval(async () => {
+      if (hasNavigatedToMatches.current) return;
       try {
         const fresh = await fetchParticipants(sessionId);
         const allDone = fresh.every((p) => p.swipeProgress >= catalog.length);
         if (allDone) {
-          router.push('/(session)/matches');
+          hasNavigatedToMatches.current = true;
+          router.replace('/(session)/matches');
         }
       } catch {}
     }, 3000);

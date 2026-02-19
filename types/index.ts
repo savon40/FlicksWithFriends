@@ -17,7 +17,7 @@ export interface SessionFilters {
   genres: string[];
   mood: string | null;
   runtimeRange: string | null;
-  releaseYearRange: string | null;
+  releaseYearRange: string[];
   minRating: number | null;
   certifications: string[];
   animation: 'include' | 'exclude' | null;
