@@ -46,7 +46,7 @@ export default function HostLobbyScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await Share.share({
-        message: `Join my FlickPick session! Code: ${sessionCode}`,
+        message: `Join my Flicks With Friends session! Code: ${sessionCode}`,
       });
     } catch {}
   };

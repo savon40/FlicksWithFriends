@@ -35,7 +35,7 @@ export default function GroupScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await Share.share({
-        message: `Join my FlickPick session! Code: ${sessionCode || ''}`,
+        message: `Join my Flicks With Friends session! Code: ${sessionCode || ''}`,
       });
     } catch (e: any) {
       if (e?.message && !e.message.includes('cancel')) {

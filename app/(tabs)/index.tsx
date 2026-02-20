@@ -49,8 +49,8 @@ export default function WelcomeScreen() {
       >
         {/* Logo Section */}
         <View style={styles.logoSection}>
-          <Text style={styles.logoText}>FlickPick</Text>
-          <Text style={styles.tagline}>SWIPE. MATCH. WATCH.</Text>
+          <Text style={styles.logoText}>Flicks With Friends</Text>
+          <Text style={styles.tagline}>PICK TOGETHER. WATCH TOGETHER.</Text>
         </View>
 
         {/* Cards Section */}
@@ -113,9 +113,9 @@ export default function WelcomeScreen() {
               <Text style={styles.stepNumberText}>2</Text>
             </View>
             <View style={styles.stepTextContainer}>
-              <Text style={styles.stepTitle}>Swipe on Movies</Text>
+              <Text style={styles.stepTitle}>Swipe on Movies and Shows</Text>
               <Text style={styles.stepDescription}>
-                Everyone swipes right on movies they'd watch and left on ones they'd skip.
+                Everyone swipes right on movies and/or shows they'd watch and left on ones they'd skip.
               </Text>
             </View>
           </View>
@@ -127,7 +127,7 @@ export default function WelcomeScreen() {
             <View style={styles.stepTextContainer}>
               <Text style={styles.stepTitle}>See Your Matches</Text>
               <Text style={styles.stepDescription}>
-                When everyone's done, FlickPick shows the movies your group all agreed on. No more endless debates!
+                When everyone's done, see the movies your group all agreed on. No more endless debates!
               </Text>
             </View>
           </View>
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   logoText: {
-    fontSize: 52,
+    fontSize: 34,
     fontWeight: '900',
     color: Colors.primary,
     letterSpacing: -1,
