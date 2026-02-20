@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Flicks With Friends",
-    "slug": "flicks-with-friends",
+    "slug": "FlickPick",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -17,7 +17,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.savon40.flickswithfriends",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleDisplayName": "Flicks With Friends"
       }
     },
     "android": {
@@ -46,6 +47,7 @@
       "eas": {
         "projectId": "ed68dc6f-902c-4a84-8d4b-768b5338a5e3"
       }
-    }
+    },
+    "owner": "savon40"
   }
 }

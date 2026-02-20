@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -136,6 +137,15 @@ export default function WelcomeScreen() {
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>No signup required. Sessions expire in 24h.</Text>
+          <View style={styles.footerLinks}>
+            <TouchableOpacity onPress={() => Linking.openURL('https://savon40.github.io/FlickPick/privacy.html')}>
+              <Text style={styles.footerLink}>Privacy Policy</Text>
+            </TouchableOpacity>
+            <Text style={styles.footerSeparator}>|</Text>
+            <TouchableOpacity onPress={() => Linking.openURL('https://savon40.github.io/FlickPick/')}>
+              <Text style={styles.footerLink}>Support</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -171,7 +181,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: Colors.muted,
-    letterSpacing: 4,
+    letterSpacing: 2,
     marginTop: 4,
   },
   cardsSection: {
@@ -288,5 +298,19 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 13,
     color: Colors.mutedLight,
+  },
+  footerLinks: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  footerLink: {
+    fontSize: 12,
+    color: Colors.mutedLight,
+  },
+  footerSeparator: {
+    fontSize: 12,
+    color: Colors.mutedLight,
+    marginHorizontal: 8,
   },
 });
