@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -25,26 +25,19 @@ import { updateSessionStatus, selectSessionWinner } from '@/lib/sessionService';
 export default function MatchesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { sessionId, matchThreshold, isHost, adminTest, resetSession } = useSession();
+  const { sessionId, matchThreshold, isHost, resetSession } = useSession();
   const { matches, loading, error: matchesError, retry: retryMatches } = useMatches(sessionId, matchThreshold);
   const { participants } = useParticipants(sessionId);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const topMatch = matches[0];
   const otherMatches = matches.slice(1);
 
-  // In admin test mode, auto-select top match
-  useEffect(() => {
-    if (adminTest && topMatch && !selectedMatchId) {
-      setSelectedMatchId(topMatch.catalogItemId);
-    }
-  }, [adminTest, topMatch, selectedMatchId]);
-
   const handleSelectMatch = (catalogItemId: string) => {
     if (!isHost) return;
     setSelectedMatchId(catalogItemId);
   };
 
-  const finalizeDisabled = !selectedMatchId && !adminTest;
+  const finalizeDisabled = !selectedMatchId;
 
   const handleLeaveSession = () => {
     Alert.alert('Leave Session', 'Are you sure you want to leave this session?', [
@@ -69,7 +62,6 @@ export default function MatchesScreen() {
       }
       await updateSessionStatus(sessionId, 'completed');
     } catch (e: any) {
-      console.warn('[FlickPick] Failed to finalize session:', e.message);
       Sentry.captureException(e, { tags: { action: 'finalizeSession' } });
     }
     resetSession();

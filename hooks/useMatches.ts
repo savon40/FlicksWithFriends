@@ -49,7 +49,6 @@ export function useMatches(sessionId: string | null, matchThreshold: number) {
       )
       .subscribe((status, err) => {
         if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR') {
-          console.warn('[FlickPick] Matches realtime error:', status, err);
           setError(`Realtime connection ${status.toLowerCase()}`);
         }
         if (status === 'SUBSCRIBED') {

@@ -18,7 +18,6 @@ export function useSessionStatus(sessionId: string | null) {
       .single()
       .then(({ data, error: fetchErr }) => {
         if (fetchErr) {
-          console.warn('[FlickPick] Session status fetch error:', fetchErr.message);
           setError(fetchErr.message);
         } else if (data) {
           setStatus(data.status as SessionStatus);
@@ -44,7 +43,6 @@ export function useSessionStatus(sessionId: string | null) {
       )
       .subscribe((status, err) => {
         if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR') {
-          console.warn('[FlickPick] Session status realtime error:', status, err);
           setError(`Realtime connection ${status.toLowerCase()}`);
         }
         if (status === 'SUBSCRIBED') {

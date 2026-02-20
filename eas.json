@@ -16,11 +16,7 @@
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
-    "production": {
-      "env": {
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
-      }
-    }
+    "production": {}
   },
   "submit": {
     "production": {}

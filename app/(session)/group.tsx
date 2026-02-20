@@ -35,12 +35,10 @@ export default function GroupScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await Share.share({
-        message: `Join my FlickPick session! Code: ${sessionCode || 'FILM42'}`,
+        message: `Join my FlickPick session! Code: ${sessionCode || ''}`,
       });
     } catch (e: any) {
-      // Share cancellation is normal — only log actual errors
       if (e?.message && !e.message.includes('cancel')) {
-        console.warn('[FlickPick] Share failed:', e.message);
         Sentry.captureException(e, { tags: { action: 'shareSession' } });
       }
     }
@@ -50,9 +48,7 @@ export default function GroupScreen() {
     if (!sessionCode) return;
     try {
       await Clipboard.setStringAsync(sessionCode);
-    } catch (e: any) {
-      console.warn('[FlickPick] Clipboard copy failed:', e.message);
-    }
+    } catch {}
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -93,7 +89,7 @@ export default function GroupScreen() {
         <TouchableOpacity style={styles.sessionRow} onPress={handleCopyCode} activeOpacity={0.7}>
           <Text style={styles.sessionLabel}>Session Code</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text style={styles.sessionCode}>{sessionCode || 'FILM42'}</Text>
+            <Text style={styles.sessionCode}>{sessionCode || ''}</Text>
             <Ionicons name={copied ? 'checkmark-circle' : 'copy-outline'} size={16} color={copied ? Colors.green : Colors.muted} />
           </View>
         </TouchableOpacity>

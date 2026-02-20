@@ -29,7 +29,7 @@ export async function getDeviceId(): Promise<string> {
       cached = id;
       return id;
     } catch (e) {
-      console.warn("[FlickPick] localStorage failed, using in-memory ID:", e);
+      // localStorage unavailable, fall back to in-memory ID
       cached = generateUUID();
       return cached;
     }
@@ -44,7 +44,7 @@ export async function getDeviceId(): Promise<string> {
     cached = id;
     return id;
   } catch (e) {
-    console.warn("[FlickPick] SecureStore failed, using in-memory ID:", e);
+    // SecureStore unavailable, fall back to in-memory ID
     cached = generateUUID();
     return cached;
   }

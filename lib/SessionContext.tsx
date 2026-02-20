@@ -12,7 +12,6 @@ interface SessionState {
   selectedServices: string[];
   filters: SessionFilters;
   currentCardIndex: number;
-  adminTest: boolean;
 }
 
 interface SessionContextType extends SessionState {
@@ -28,7 +27,6 @@ interface SessionContextType extends SessionState {
   setFilters: (filters: SessionFilters) => void;
   updateFilter: <K extends keyof SessionFilters>(key: K, value: SessionFilters[K]) => void;
   setCurrentCardIndex: (index: number) => void;
-  setAdminTest: (adminTest: boolean) => void;
   resetSession: () => void;
 }
 
@@ -57,7 +55,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     selectedServices: [],
     filters: { ...defaultFilters },
     currentCardIndex: 0,
-    adminTest: false,
   });
 
   const setSessionCode = (code: string | null) =>
@@ -101,9 +98,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const setCurrentCardIndex = (index: number) =>
     setState((s) => ({ ...s, currentCardIndex: index }));
 
-  const setAdminTest = (adminTest: boolean) =>
-    setState((s) => ({ ...s, adminTest }));
-
   const resetSession = () =>
     setState({
       sessionCode: null,
@@ -116,7 +110,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       selectedServices: [],
       filters: { ...defaultFilters },
       currentCardIndex: 0,
-      adminTest: false,
     });
 
   return (
@@ -135,7 +128,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         setFilters,
         updateFilter,
         setCurrentCardIndex,
-        setAdminTest,
         resetSession,
       }}
     >
