@@ -80,7 +80,6 @@ export function useParticipants(sessionId: string | null) {
       )
       .subscribe((status, err) => {
         if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR') {
-          console.warn('[FlickPick] Participants realtime error:', status, err);
           setError(`Realtime connection ${status.toLowerCase()}`);
         }
         if (status === 'SUBSCRIBED') {

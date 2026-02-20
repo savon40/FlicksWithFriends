@@ -26,19 +26,13 @@ import {
 } from '@/lib/constants';
 import { useParticipants } from '@/hooks/useParticipants';
 import { updateSessionStatus } from '@/lib/sessionService';
-import { getDiscoverPreviewUrls } from '@/lib/tmdb';
 
 export default function HostLobbyScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { sessionCode, sessionId, selectedServices, filters, setAdminTest } = useSession();
-  const [adminMode, setAdminMode] = useState(false);
+  const { sessionCode, sessionId, selectedServices, filters } = useSession();
   const { participants } = useParticipants(sessionId);
   const [copied, setCopied] = useState(false);
-  const [apiExpanded, setApiExpanded] = useState(false);
-  const [apiCopied, setApiCopied] = useState(false);
-
-  const previewUrls = getDiscoverPreviewUrls(filters, selectedServices);
 
   const handleCopyCode = async () => {
     if (!sessionCode) return;
@@ -52,18 +46,12 @@ export default function HostLobbyScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await Share.share({
-        message: `Join my FlickPick session! Code: ${sessionCode}`,
+        message: `Join my Flicks With Friends session! Code: ${sessionCode}`,
       });
     } catch {}
   };
 
-  const startButtonDisabled = participants.length < 2 && !adminMode;
-
-  const handleAdminTest = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setAdminMode(true);
-    setAdminTest(true);
-  };
+  const startButtonDisabled = participants.length < 2;
 
   const handleStartSwiping = async () => {
     if (!sessionId || startButtonDisabled) return;
@@ -116,7 +104,7 @@ export default function HostLobbyScreen() {
         <Text style={styles.codeLabel}>GROUP CODE</Text>
         <TouchableOpacity onPress={handleCopyCode} activeOpacity={0.7}>
           <View style={styles.codeDisplay}>
-            {(sessionCode || 'FILM42').split('').map((char, i) => (
+            {(sessionCode || '').split('').map((char, i) => (
               <View key={i} style={styles.codeChar}>
                 <Text style={styles.codeCharText}>{char}</Text>
               </View>
@@ -158,51 +146,6 @@ export default function HostLobbyScreen() {
         </View>
       )}
 
-      {/* API Preview */}
-      <View style={styles.apiSection}>
-        <TouchableOpacity
-          style={styles.apiHeader}
-          onPress={() => setApiExpanded(!apiExpanded)}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="code-slash" size={14} color={Colors.muted} />
-          <Text style={styles.apiHeaderText}>TMDB API Call</Text>
-          <Ionicons
-            name={apiExpanded ? 'chevron-up' : 'chevron-down'}
-            size={14}
-            color={Colors.muted}
-          />
-        </TouchableOpacity>
-        {apiExpanded && (
-          <View style={styles.apiBody}>
-            {previewUrls.map((url, i) => (
-              <TouchableOpacity
-                key={i}
-                onPress={async () => {
-                  await Clipboard.setStringAsync(url);
-                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                  setApiCopied(true);
-                  setTimeout(() => setApiCopied(false), 2000);
-                }}
-                activeOpacity={0.7}
-              >
-                <View style={styles.apiUrlBox}>
-                  <Text style={styles.apiUrlLabel}>
-                    {url.includes('/discover/movie') ? 'Movie' : 'TV'} Discover
-                  </Text>
-                  <Text style={styles.apiUrlText} numberOfLines={6}>
-                    {url}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-            <Text style={styles.apiHint}>
-              {apiCopied ? 'Copied!' : 'Tap URL to copy'}
-            </Text>
-          </View>
-        )}
-      </View>
-
       {/* Participants */}
       <View style={styles.participantsSection}>
         <Text style={styles.participantsTitle}>
@@ -235,11 +178,6 @@ export default function HostLobbyScreen() {
 
       {/* Start Button */}
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
-        {!adminMode && participants.length < 2 && (
-          <TouchableOpacity onPress={handleAdminTest} activeOpacity={0.7}>
-            <Text style={styles.adminTestText}>Admin Test</Text>
-          </TouchableOpacity>
-        )}
         <TouchableOpacity
           style={[styles.startButton, startButtonDisabled && styles.startButtonDisabled]}
           onPress={handleStartSwiping}
@@ -387,57 +325,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.primary,
   },
-  apiSection: {
-    paddingHorizontal: 24,
-    marginBottom: 16,
-  },
-  apiHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 8,
-  },
-  apiHeaderText: {
-    flex: 1,
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.muted,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  apiBody: {
-    marginTop: 4,
-  },
-  apiUrlBox: {
-    backgroundColor: Colors.card,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    padding: 10,
-    marginBottom: 6,
-  },
-  apiUrlLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: Colors.primary,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  apiUrlText: {
-    fontSize: 10,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    color: Colors.muted,
-    lineHeight: 15,
-  },
-  apiHint: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Colors.mutedLight,
-    textAlign: 'center',
-    marginTop: 2,
-    marginBottom: 4,
-  },
   participantsSection: {
     flex: 1,
     paddingHorizontal: 24,
@@ -530,12 +417,5 @@ const styles = StyleSheet.create({
     color: Colors.mutedLight,
     textAlign: 'center',
     marginTop: 8,
-  },
-  adminTestText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.muted,
-    textAlign: 'center',
-    marginBottom: 10,
   },
 });

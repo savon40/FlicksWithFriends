@@ -44,7 +44,7 @@ export default function JoinerLobbyScreen() {
       <View style={styles.codeSection}>
         <Text style={styles.codeLabel}>SESSION CODE</Text>
         <View style={styles.codeDisplay}>
-          {(sessionCode || 'FILM42').split('').map((char, i) => (
+          {(sessionCode || '').split('').map((char, i) => (
             <View key={i} style={styles.codeChar}>
               <Text style={styles.codeCharText}>{char}</Text>
             </View>

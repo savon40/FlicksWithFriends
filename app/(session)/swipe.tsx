@@ -40,7 +40,7 @@ const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3;
 export default function SwipeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { sessionId, sessionCode, participantId, adminTest, resetSession } = useSession();
+  const { sessionId, sessionCode, participantId, resetSession } = useSession();
   const { catalog, loading: catalogLoading, error: catalogError, retry: retryCatalog } = useCatalog(sessionId);
   const { participants } = useParticipants(sessionId);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -69,23 +69,17 @@ export default function SwipeScreen() {
     if (hasNavigatedToMatches.current) return;
     if (currentIndex < catalog.length || catalog.length === 0) return;
 
-    if (adminTest) {
-      hasNavigatedToMatches.current = true;
-      router.replace('/(session)/matches');
-      return;
-    }
-
     // Check from realtime updates
     const allDone = participants.every((p) => p.swipeProgress >= catalog.length);
     if (allDone) {
       hasNavigatedToMatches.current = true;
       router.replace('/(session)/matches');
     }
-  }, [currentIndex, catalog.length, adminTest, participants]);
+  }, [currentIndex, catalog.length, participants]);
 
   // Polling fallback: re-fetch participants every 3s when waiting
   useEffect(() => {
-    if (!isDone || adminTest || !sessionId || hasNavigatedToMatches.current) return;
+    if (!isDone || !sessionId || hasNavigatedToMatches.current) return;
 
     const interval = setInterval(async () => {
       if (hasNavigatedToMatches.current) return;
@@ -100,7 +94,7 @@ export default function SwipeScreen() {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [isDone, adminTest, sessionId, catalog.length]);
+  }, [isDone, sessionId, catalog.length]);
 
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -125,11 +119,9 @@ export default function SwipeScreen() {
         direction,
         timeOnCardMs,
       }).catch((e) => {
-        console.warn('[FlickPick] recordSwipe failed:', e.message);
         Sentry.captureException(e, { tags: { action: 'recordSwipe' } });
       });
       updateSwipeProgress(participantId, currentIndex + 1).catch((e) => {
-        console.warn('[FlickPick] updateSwipeProgress failed:', e.message);
         Sentry.captureException(e, { tags: { action: 'updateSwipeProgress' } });
       });
     },
@@ -242,7 +234,7 @@ export default function SwipeScreen() {
     const allDone = participants.every((p) => p.swipeProgress >= catalog.length);
     return (
       <View style={[styles.container, styles.doneContainer, { paddingTop: insets.top }]}>
-        {adminTest || allDone ? (
+        {allDone ? (
           <>
             <Ionicons name="checkmark-circle" size={64} color={Colors.primary} />
             <Text style={styles.doneTitle}>All Done!</Text>

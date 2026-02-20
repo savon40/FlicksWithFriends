@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -49,8 +50,8 @@ export default function WelcomeScreen() {
       >
         {/* Logo Section */}
         <View style={styles.logoSection}>
-          <Text style={styles.logoText}>FlickPick</Text>
-          <Text style={styles.tagline}>SWIPE. MATCH. WATCH.</Text>
+          <Text style={styles.logoText}>Flicks With Friends</Text>
+          <Text style={styles.tagline}>PICK TOGETHER. WATCH TOGETHER.</Text>
         </View>
 
         {/* Cards Section */}
@@ -113,9 +114,9 @@ export default function WelcomeScreen() {
               <Text style={styles.stepNumberText}>2</Text>
             </View>
             <View style={styles.stepTextContainer}>
-              <Text style={styles.stepTitle}>Swipe on Movies</Text>
+              <Text style={styles.stepTitle}>Swipe on Movies and Shows</Text>
               <Text style={styles.stepDescription}>
-                Everyone swipes right on movies they'd watch and left on ones they'd skip.
+                Everyone swipes right on movies and/or shows they'd watch and left on ones they'd skip.
               </Text>
             </View>
           </View>
@@ -127,7 +128,7 @@ export default function WelcomeScreen() {
             <View style={styles.stepTextContainer}>
               <Text style={styles.stepTitle}>See Your Matches</Text>
               <Text style={styles.stepDescription}>
-                When everyone's done, FlickPick shows the movies your group all agreed on. No more endless debates!
+                When everyone's done, see the movies your group all agreed on. No more endless debates!
               </Text>
             </View>
           </View>
@@ -136,6 +137,15 @@ export default function WelcomeScreen() {
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>No signup required. Sessions expire in 24h.</Text>
+          <View style={styles.footerLinks}>
+            <TouchableOpacity onPress={() => Linking.openURL('https://savon40.github.io/FlicksWithFriends/privacy.html')}>
+              <Text style={styles.footerLink}>Privacy Policy</Text>
+            </TouchableOpacity>
+            <Text style={styles.footerSeparator}>|</Text>
+            <TouchableOpacity onPress={() => Linking.openURL('https://savon40.github.io/FlicksWithFriends/')}>
+              <Text style={styles.footerLink}>Support</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -159,7 +169,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   logoText: {
-    fontSize: 52,
+    fontSize: 34,
     fontWeight: '900',
     color: Colors.primary,
     letterSpacing: -1,
@@ -171,7 +181,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: Colors.muted,
-    letterSpacing: 4,
+    letterSpacing: 2,
     marginTop: 4,
   },
   cardsSection: {
@@ -288,5 +298,19 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 13,
     color: Colors.mutedLight,
+  },
+  footerLinks: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  footerLink: {
+    fontSize: 12,
+    color: Colors.mutedLight,
+  },
+  footerSeparator: {
+    fontSize: 12,
+    color: Colors.mutedLight,
+    marginHorizontal: 8,
   },
 });

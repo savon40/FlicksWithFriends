@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "FlickPick",
+    "name": "Flicks With Friends",
     "slug": "FlickPick",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "flickpick",
+    "scheme": "flickswithfriends",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -15,12 +15,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.savon40.flickpick",
+      "bundleIdentifier": "com.savon40.flickswithfriends",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleDisplayName": "Flicks With Friends"
       }
     },
     "android": {
+      "package": "com.savon40.flickswithfriends",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#00838f"
@@ -35,9 +37,7 @@
     },
     "plugins": [
       "expo-router",
-      ["@sentry/react-native", {
-        "uploadSourceMapsToSentry": false
-      }]
+      "@sentry/react-native"
     ],
     "experiments": {
       "typedRoutes": true
@@ -47,6 +47,7 @@
       "eas": {
         "projectId": "ed68dc6f-902c-4a84-8d4b-768b5338a5e3"
       }
-    }
+    },
+    "owner": "savon40"
   }
 }
