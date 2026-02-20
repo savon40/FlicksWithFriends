@@ -138,11 +138,11 @@ export default function WelcomeScreen() {
         <View style={styles.footer}>
           <Text style={styles.footerText}>No signup required. Sessions expire in 24h.</Text>
           <View style={styles.footerLinks}>
-            <TouchableOpacity onPress={() => Linking.openURL('https://savon40.github.io/FlickPick/privacy.html')}>
+            <TouchableOpacity onPress={() => Linking.openURL('https://savon40.github.io/FlicksWithFriends/privacy.html')}>
               <Text style={styles.footerLink}>Privacy Policy</Text>
             </TouchableOpacity>
             <Text style={styles.footerSeparator}>|</Text>
-            <TouchableOpacity onPress={() => Linking.openURL('https://savon40.github.io/FlickPick/')}>
+            <TouchableOpacity onPress={() => Linking.openURL('https://savon40.github.io/FlicksWithFriends/')}>
               <Text style={styles.footerLink}>Support</Text>
             </TouchableOpacity>
           </View>
